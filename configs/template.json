@@ -1,0 +1,7 @@
+{
+    "template" : {
+        "module" : "configs/template.py",
+        "description" : "A template validation test.",
+        "directions" : "Put any declarations you need here."
+    }
+}
