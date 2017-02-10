@@ -159,9 +159,10 @@ table {
 }
 
 th {
-   background-color: #F26C3A;
+   background-color: #512E5F;
    color: #ffffff;
    padding: 10px;
+   border-bottom: 2px solid #F26C3A;
 }
 
 td {
