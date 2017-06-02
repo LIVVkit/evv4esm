@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Copyright (c) 2015,2016, UT-BATTELLE, LLC
 # All rights reserved.
 # 
@@ -48,9 +49,11 @@ def parse_args(args=None):
   
     
     args = parser.parse_args(args)
-   
+ 
     options.parse_args(['-V']+args.extensions)
+    
     from eve import resources 
+    args.livv_resource_dir = livvkit.resource_dir
     livvkit.resource_dir   = os.sep.join(resources.__path__) 
     
     return args 
@@ -80,21 +83,29 @@ def main(args):
     from livvkit.util import functions
     from livvkit.util import elements
     
-    functions.setup_output()
+    functions.setup_output(jsd=os.path.join(args.livv_resource_dir,'js'))
     
     l = []
     validation_config = {}
+    print(" -----------------------------------------------------------------")
+    print("   Beginning extensions test suite ")
+    print(" -----------------------------------------------------------------")
+    print("")
     for conf in livvkit.validation_model_configs:
         validation_config = functions.merge_dicts(validation_config, 
-                functions.read_json(conf))
-    l.append(scheduler.run("validation", components.validation, 
-        validation_config))
-   
+                                                  functions.read_json(conf))
+    l.extend(scheduler.run_quiet(components.validation, validation_config,
+                                 group=False))
+    print(" -----------------------------------------------------------------")
+    print("   Extensions test suite complete ")
+    print(" -----------------------------------------------------------------")
+    print("")
+    
     result = elements.page("Summary", "", element_list=l)
     functions.write_json(result, livvkit.output_dir, "index.json")
     print("-------------------------------------------------------------------")
     print(" Done!  Results can be seen in a web browser at:")
-    print("        " +  livvkit.output_dir )
+    print("   " +  os.path.join(livvkit.output_dir, 'index.html'))
     print("-------------------------------------------------------------------")
 
     
