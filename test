@@ -32,6 +32,7 @@ import six
 
 import os
 import sys
+import time
 import argparse
 
 import livvkit
@@ -47,10 +48,13 @@ def parse_args(args=None):
             default=None,
             help='Specify the location of the JSON configuration files for the extended V&V tests to run.')
   
+    parser.add_argument('-o', '--out-dir',
+                        default=os.path.join(os.getcwd(), "vv_" + time.strftime("%Y-%m-%d")),
+                        help='Location to output the EVE webpages.')
     
     args = parser.parse_args(args)
  
-    options.parse_args(['-V']+args.extensions)
+    options.parse_args(['-V']+args.extensions + ['-o', args.out_dir])
     
     from eve import resources 
     args.livv_resource_dir = livvkit.resource_dir
