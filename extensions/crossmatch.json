@@ -1,0 +1,16 @@
+{
+    "crossmatch" : {
+        "module" : "extensions/crossmatch.py",
+        "R-dir" : "extensions/R",
+        "case1" : "default",
+        "dir1" : "extensions/archive",
+        "set1-file": "extensions/input_files/list_default.txt",
+        "case2" : "fast",
+        "dir2" : "extensions/archive",
+        "set2-file": "extensions/input_files/list_fast.txt",
+        "season" : "SON",
+        "critical": 0.05
+
+    }
+}
+
