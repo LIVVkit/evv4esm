@@ -1,0 +1,14 @@
+{
+    "ks" : {
+        "module" : "extensions/ks.py",
+        "case1" : "default",
+        "dir1" : "/lustre/atlas1/cli106/proj-shared/imn/ne16_compiler_ensembles",
+        "set1-file": "extensions/input_files/list_default_extended.txt",
+        "case2" : "fast",
+        "dir2" : "/lustre/atlas1/cli106/proj-shared/imn/ne16_compiler_ensembles",
+        "set2-file": "extensions/input_files/list_fast_extended.txt",
+        "critical": 13    
+    }
+}
+
+
