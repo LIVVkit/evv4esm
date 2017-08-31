@@ -124,7 +124,7 @@ def run(name, config):
     tbl_el = {'Type': 'V-H Table',
               'Title': 'Validation',
               'TableTitle': 'Analyzed variables',
-              'Headers': ['h0', 'KS', 'avg'],
+              'Headers': ['h0', 'K-S test (D, p)', 'T test (t, p)'],
               'Data': {'': tbl_data}
               }
     
@@ -345,34 +345,34 @@ def main(args):
 
     img_list = []
     for var in sorted(common_vars):
-        details[var]['Welch'] = stats.ttest_ind(averages[args.case1][var]['annuals'], 
+        details[var]['T test (t, p)'] = stats.ttest_ind(averages[args.case1][var]['annuals'], 
                                                  averages[args.case2][var]['annuals'], 
                                                  equal_var=False, nan_policy='omit')
-        if np.isnan(details[var]['Welch']).any():
-             details[var]['Welch'] = (None, None)
+        if np.isnan(details[var]['T test (t, p)']).any():
+             details[var]['T test (t, p)'] = (None, None)
 
-        details[var]['KS'] = stats.ks_2samp(averages[args.case1][var]['annuals'], 
+        details[var]['K-S test (D, p)'] = stats.ks_2samp(averages[args.case1][var]['annuals'], 
                                             averages[args.case2][var]['annuals'])
 
-        details[var]['avg'] = (np.mean(averages[args.case1][var]['annuals']), 
+        details[var]['mean (case 1, case 2)'] = (np.mean(averages[args.case1][var]['annuals']), 
                                np.mean(averages[args.case2][var]['annuals']))
 
-        details[var]['max'] = (np.max(averages[args.case1][var]['annuals']), 
+        details[var]['max (case 1, case 2)'] = (np.max(averages[args.case1][var]['annuals']), 
                                np.max(averages[args.case2][var]['annuals']))
 
-        details[var]['min'] = (np.min(averages[args.case1][var]['annuals']), 
+        details[var]['min (case 1, case 2)'] = (np.min(averages[args.case1][var]['annuals']), 
                                np.min(averages[args.case2][var]['annuals']))
 
-        details[var]['std'] = (np.std(averages[args.case1][var]['annuals']), 
+        details[var]['std (case 1, case 2)'] = (np.std(averages[args.case1][var]['annuals']), 
                                np.std(averages[args.case2][var]['annuals']))
 
-        details[var]['h0'] = 'reject' if details[var]['KS'][1] < 0.05 else 'accept'
+        details[var]['h0'] = 'reject' if details[var]['K-S (D, p)'][1] < 0.05 else 'accept'
 
         img_file = os.path.relpath(os.path.join(args.img_dir, var + '.png'), os.getcwd())
         prob_plot(args, var, averages, 20, img_file)
         
         img_desc = 'Mean annual global average of {} for <em>{}</em> is {:.3e} and for <em>{}</em> is {:.3e}'.format(
-                        var, args.case1, details[var]['avg'][0], args.case2, details[var]['avg'][1])
+                        var, args.case1, details[var]['mean (case 1, case 2)'][0], args.case2, details[var]['mean (case 1, case 2)'][1])
 
         img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
         img_list.append(EL.image(var, img_desc, img_link))
