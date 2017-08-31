@@ -277,7 +277,7 @@ def summarize_result(results_page):
     summary = {}
     for tab in results_page['Data']['Tabs']:
         for el in tab['Elements']:
-            if el['Type'] == 'ValSummary':
+            if el['Type'] == 'V-H Table':
                 summary['Variables Analyzed'] = len(el['Data'][''].keys())        
                 rejects = [var for var, dat in el['Data'][''].items() if dat['h0'] == 'reject']
                 summary['Rejecting'] = len(rejects)
