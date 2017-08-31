@@ -1,5 +1,5 @@
 {
-    "ks" : {
+    "default_v_fast" : {
         "module" : "extensions/ks.py",
         "case1" : "default",
         "dir1" : "/lustre/atlas1/cli106/proj-shared/imn/ne16_compiler_ensembles",
