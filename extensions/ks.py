@@ -366,7 +366,7 @@ def main(args):
         details[var]['std (case 1, case 2)'] = (np.std(averages[args.case1][var]['annuals']), 
                                np.std(averages[args.case2][var]['annuals']))
 
-        details[var]['h0'] = 'reject' if details[var]['K-S (D, p)'][1] < 0.05 else 'accept'
+        details[var]['h0'] = 'reject' if details[var]['K-S test (D, p)'][1] < 0.05 else 'accept'
 
         img_file = os.path.relpath(os.path.join(args.img_dir, var + '.png'), os.getcwd())
         prob_plot(args, var, averages, 20, img_file)
