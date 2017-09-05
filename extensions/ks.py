@@ -310,8 +310,8 @@ def main(args):
     for case, c_files in six.iteritems(ens_files):
         # Get monthly averages from files
         for file_ in c_files:
-            member, date = [os.path.basename(file_).split('.')[s] for s in [0,-2]]
-            month = int(date.split('-')[-1])
+            member, rest = os.path.basename(file_).split('.cam.')
+            month = int(os.path.splitext(rest)[0].split('-')[-1])
 
             try:
                 data = Dataset(file_, 'r')
