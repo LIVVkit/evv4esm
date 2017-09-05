@@ -166,10 +166,10 @@ def case_files(args):
     for key, case, dir_, set_ in zip([key1, key2], [args.case1, args.case2], [args.dir1, args.dir2], [ens_set1, ens_set2]):
         f = []
         for n in set_:
-            base = '{c}_{n:04}/run/{c}_{n:04}.cam.h0.0001-12.nc'.format(c=case, n=n)
-            f.append(os.path.join(dir_, base))
-            glb = os.path.join(dir_, base.replace('0001-12', '0002-*'))
+            base = '{c}?{n:04}/run/{c}?{n:04}.cam.h0.0001-12.nc'.format(c=case, n=n)
+            glb = os.path.join(dir_, base)
             f.extend(sorted(glob.glob(glb)))
+            f.extend(sorted(glob.glob(glb.replace('0001-12', '0002-*'))))
         f_sets[key] = f
 
     return f_sets
@@ -257,7 +257,7 @@ def prob_plot(args, var, averages, n_q, img_file):
 
 
 def print_summary(summary):
-    print('    Kolmogorov–Smirnov Test:')
+    print('    Kolmogorov–Smirnov Test: {}'.format(summary['']['Case']))
     print('      Variables analyzed: {}'.format(summary['']['Variables Analyzed']))
     print('      Rejecting: {}'.format(summary['']['Rejecting']))
     print('      Critical value: {}'.format(summary['']['Critical Value']))
@@ -275,6 +275,7 @@ def print_details(details):
 
 def summarize_result(results_page):
     summary = {}
+    summary['Case'] = results_page['Title']
     for tab in results_page['Data']['Tabs']:
         for el in tab['Elements']:
             if el['Type'] == 'V-H Table':
