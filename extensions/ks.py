@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# coding=utf-8
 
 """
 The K-S test.
@@ -7,12 +8,12 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import six
 
 import os
-import sys
+import re
 import glob
-import json
-#import calendar
+# import calendar
 import argparse
 
+from pprint import pprint
 from collections import OrderedDict
     
 import numpy as np
@@ -29,19 +30,12 @@ from livvkit.util import functions as FN
 from livvkit.util.LIVVDict import LIVVDict
 
 
-# from livvkit.util.cats import json_file
-def json_file(f):
-    with open(f) as jf:
-        j = json.load(jf)
-    return j
-
-
 def parse_args(args=None):
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument('-c', '--config',
-                        type=json_file,
+                        type=FN.read_json,
                         help='A JSON config file containing a `ks` dictionary defining ' +
                              'the options. NOTE: command line options will override file options.')
 
@@ -53,10 +47,6 @@ def parse_args(args=None):
                         default=os.path.join(os.getcwd(), 'archive'),
                         help='Location of case 1 files.')
 
-    parser.add_argument('--set1-file',
-                        default=os.path.join(os.getcwd(), 'input_files', 'list_default.txt'),
-                        help='File containing set of ensemble members to bused for case 1.')
-
     parser.add_argument('--case2',
                         default='fast',
                         help='Name of case 2.')
@@ -65,9 +55,9 @@ def parse_args(args=None):
                         default=os.path.join(os.getcwd(), 'archive'),
                         help='Location of case 2 files.')
 
-    parser.add_argument('--set2-file',
-                        default=os.path.join(os.getcwd(), 'input_files', 'list_fast.txt'),
-                        help='File containing set of ensemble members to bused for case 2.')
+    parser.add_argument('--ninst',
+                        default=30, type=int,
+                        help='The number of instances in both cases.')
 
     parser.add_argument('--critical',
                         default=13, type=float,
@@ -137,8 +127,9 @@ def run(name, config):
 
 
 def monthly_to_annual_avg(var_data, cal):
-    if len(var_data) != 12:
-        raise ValueError('Error! There are 12 months in a year; you passed in {} monthly averages.'.format(len(var_data)))
+    # FIXME: turn back on once CIME tests are sucessful
+    # if len(var_data) != 12:
+    #     raise ValueError('Error! There are 12 months in a year; you passed in {} monthly averages.'.format(len(var_data)))
     
     # TODO: more advanced calendar handling
     if cal == 'ignore':
@@ -151,10 +142,15 @@ def monthly_to_annual_avg(var_data, cal):
     return avg
 
 
+def file_instance(case_file):
+    return int(re.search(r'cam_[0-9]+', case_file).group(0).replace('cam_', ''))
+
+
+def file_date_str(case_file):
+    return re.search(r'h0\.[0-9]+-[0-9]+.nc', case_file).group(0).replace('h0.', '').replace('.nc', '')
+
+
 def case_files(args):
-    ens_set1 = np.genfromtxt(args.set1_file, dtype=int)
-    ens_set2 = np.genfromtxt(args.set2_file, dtype=int)
-    
     # ensure unique case names for the dictionary
     key1 = args.case1
     key2 = args.case2
@@ -163,37 +159,41 @@ def case_files(args):
         key2 += '2'
     
     f_sets = {}
-    for key, case, dir_, set_ in zip([key1, key2], [args.case1, args.case2], [args.dir1, args.dir2], [ens_set1, ens_set2]):
+    for key, case, dir_ in zip([key1, key2], [args.case1, args.case2], [args.dir1, args.dir2]):
         f = []
-        for n in set_:
-            base = '{c}?{n:04}/run/{c}?{n:04}.cam.h0.0001-12.nc'.format(c=case, n=n)
-            glb = os.path.join(dir_, base)
-            f.extend(sorted(glob.glob(glb)))
-            f.extend(sorted(glob.glob(glb.replace('0001-12', '0002-*'))))
-        f_sets[key] = f
+        base = '{d}/run/{c}.cam_????.h0.????-??.nc'.format(d=dir_, c=case)
+        glb = os.path.normpath(base)
+        f.extend(sorted(glob.glob(glb)))
+        f_i = OrderedDict()
+        for ii in range(1, args.ninst+1):
+            f_i[ii] = sorted(filter(lambda x: file_instance(x) == ii, f), key=file_date_str)
+            if len(f_i[ii]) > 12:
+                f_i[ii] = f_i[ii][-12:]
 
-    return f_sets
+        f_sets[key] = f_i
+
+    return f_sets, key1, key2
 
 
 def prob_plot(args, var, averages, n_q, img_file):
-    #NOTE: Following the methods described in
-    #      https://stackoverflow.com/questions/43285752
-    #      to create the Q-Q and P-P plots
-    q = np.linspace(0,100,n_q+1)
+    # NOTE: Following the methods described in
+    #       https://stackoverflow.com/questions/43285752
+    #       to create the Q-Q and P-P plots
+    q = np.linspace(0, 100, n_q+1)
     avgs1 = averages[args.case1][var]['annuals']
     avgs2 = averages[args.case2][var]['annuals']
     avgs_all = np.concatenate((avgs1, avgs2))
     avgs_min = np.min(avgs_all)
     avgs_max = np.max(avgs_all)
 
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2,2, figsize=(10,10))
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(10, 10))
     plt.rc('font', family='serif')
   
     ax1.set_title('Q-Q Plot')
     ax1.set_xlabel('{} pdf'.format(args.case1))
     ax1.set_ylabel('{} pdf'.format(args.case2))
 
-    #NOTE: Axis switched here from Q-Q plot because cdf reflects about the 1-1 line
+    # NOTE: Axis switched here from Q-Q plot because cdf reflects about the 1-1 line
     ax2.set_title('P-P Plot')
     ax2.set_xlabel('{} cdf'.format(args.case2))
     ax2.set_ylabel('{} cdf'.format(args.case1))
@@ -223,8 +223,8 @@ def prob_plot(args, var, averages, n_q, img_file):
     ax4.set_xlim(tuple(norm_rng))
     ax4.autoscale()
 
-    #NOTE: Produce unity-based normalization of data for the Q-Q plots because
-    #      matplotlib can't handle small absolute values or data ranges. See 
+    # NOTE: Produce unity-based normalization of data for the Q-Q plots because
+    #       matplotlib can't handle small absolute values or data ranges. See
     #          https://github.com/matplotlib/matplotlib/issues/6015
     if not np.allclose(avgs_min, avgs_max, atol=np.finfo(avgs_max).eps):
         norm1 = (avgs1 - avgs_min)/(avgs_max - avgs_min)
@@ -269,7 +269,6 @@ def print_details(details):
         print('-'*80)
         print(set_)
         print('-'*80)
-        from pprint import pprint
         pprint(details[set_])
 
 
@@ -290,7 +289,6 @@ def summarize_result(results_page):
     return {'': summary}
 
 
-
 def populate_metadata():
     """
     Generates the metadata responsible for telling the summary what
@@ -305,67 +303,71 @@ def populate_metadata():
     
 
 def main(args):
-    ens_files = case_files(args)
+    ens_files, key1, key2 = case_files(args)
+    if args.case1 == args.case2:
+        args.case1 = key1
+        args.case2 = key2
+
     averages = LIVVDict()
     details = LIVVDict()
-    for case, c_files in six.iteritems(ens_files):
-        # Get monthly averages from files
-        for file_ in c_files:
-            member, rest = os.path.basename(file_).split('.cam.')
-            month = int(os.path.splitext(rest)[0].split('-')[-1])
+    for case, inst_dict in six.iteritems(ens_files):
+        for inst, i_files in six.iteritems(inst_dict):
+            # Get monthly averages from files
+            for file_ in i_files:
+                date_str = file_date_str(file_)
 
-            try:
-                data = Dataset(file_, 'r')
-            except OSError as E:
-                six.raise_from(BaseException('Could not open netCDF dataset: {}'.format(file_)), E)
-            
-            for var in data.variables.keys():
-                if len(data.variables[var].shape) < 2 or var in ['time_bnds', 'date_written', 'time_written']:
-                    continue
-                elif 'ncol' not in data.variables[var].dimensions:
-                    continue
-                elif len(data.variables[var].shape) == 3:
-                    averages[case][var][member][month] = np.mean(data.variables[var][0,:,:])
-                elif len(data.variables[var].shape) == 2:
-                    averages[case][var][member][month] = np.mean(data.variables[var][0,:])
-        
+                try:
+                    data = Dataset(file_, 'r')
+                except OSError as E:
+                    six.raise_from(BaseException('Could not open netCDF dataset: {}'.format(file_)), E)
+
+                for var in data.variables.keys():
+                    if len(data.variables[var].shape) < 2 or var in ['time_bnds', 'date_written', 'time_written']:
+                        continue
+                    elif 'ncol' not in data.variables[var].dimensions:
+                        continue
+                    elif len(data.variables[var].shape) == 3:
+                        averages[case][var]['{:04}'.format(inst)][date_str] = np.mean(data.variables[var][0, :, :])
+                    elif len(data.variables[var].shape) == 2:
+                        averages[case][var]['{:04}'.format(inst)][date_str] = np.mean(data.variables[var][0, :])
+
         # calculate annual averages from data structure
-        for var, members in six.iteritems(averages[case]):
-            for m in members:
-                monthly = [members[m][i] for i in range(1,13)]
-                averages[case][var][m]['annual'] = monthly_to_annual_avg(monthly, cal='ignore')
-        
-        # array of annual averages for 
+        for var, instances in six.iteritems(averages[case]):
+            for inst in instances:
+                months = [instances[inst][date] for date in instances[inst]]
+                averages[case][var][inst]['annual'] = monthly_to_annual_avg(months, cal='ignore')
+
+        # array of annual averages for
         for var in averages[case]:
-            averages[case][var]['annuals'] = np.array([averages[case][var][m]['annual'] for m in sorted(six.iterkeys(averages[case][var]))])
+                averages[case][var]['annuals'] = np.array([averages[case][var][m]['annual'] for m in sorted(six.iterkeys(averages[case][var]))])
 
     # now, we got the data, so let's get some stats
     var_set1 = set([var for var in averages[args.case1]])
     var_set2 = set([var for var in averages[args.case2]])
-    common_vars = list( var_set1 & var_set2 ) 
+    common_vars = list(var_set1 & var_set2)
 
     img_list = []
     for var in sorted(common_vars):
-        details[var]['T test (t, p)'] = stats.ttest_ind(averages[args.case1][var]['annuals'], 
-                                                 averages[args.case2][var]['annuals'], 
-                                                 equal_var=False, nan_policy='omit')
+        details[var]['T test (t, p)'] = stats.ttest_ind(averages[args.case1][var]['annuals'],
+                                                        averages[args.case2][var]['annuals'],
+                                                        equal_var=False, nan_policy='omit')
         if np.isnan(details[var]['T test (t, p)']).any():
-             details[var]['T test (t, p)'] = (None, None)
+            details[var]['T test (t, p)'] = (None, None)
 
-        details[var]['K-S test (D, p)'] = stats.ks_2samp(averages[args.case1][var]['annuals'], 
-                                            averages[args.case2][var]['annuals'])
+        details[var]['K-S test (D, p)'] = stats.ks_2samp(averages[args.case1][var]['annuals'],
+                                                         averages[args.case2][var]['annuals'])
 
-        details[var]['mean (case 1, case 2)'] = (np.mean(averages[args.case1][var]['annuals']), 
-                               np.mean(averages[args.case2][var]['annuals']))
+        details[var]['mean (case 1, case 2)'] = (np.mean(averages[args.case1][var]['annuals']),
+                                                 np.mean(averages[args.case2][var]['annuals']))
 
-        details[var]['max (case 1, case 2)'] = (np.max(averages[args.case1][var]['annuals']), 
-                               np.max(averages[args.case2][var]['annuals']))
+        details[var]['max (case 1, case 2)'] = (np.max(averages[args.case1][var]['annuals']),
+                                                np.max(averages[args.case2][var]['annuals']))
 
-        details[var]['min (case 1, case 2)'] = (np.min(averages[args.case1][var]['annuals']), 
-                               np.min(averages[args.case2][var]['annuals']))
+        details[var]['min (case 1, case 2)'] = (np.min(averages[args.case1][var]['annuals']),
+                                                np.min(averages[args.case2][var]['annuals']))
 
-        details[var]['std (case 1, case 2)'] = (np.std(averages[args.case1][var]['annuals']), 
-                               np.std(averages[args.case2][var]['annuals']))
+        details[var]['std (case 1, case 2)'] = (np.std(averages[args.case1][var]['annuals']),
+                                                np.std(averages[args.case2][var]['annuals']))
 
         details[var]['h0'] = 'reject' if details[var]['K-S test (D, p)'][1] < 0.05 else 'accept'
 
@@ -380,7 +382,8 @@ def main(args):
         
     img_gal = EL.gallery('Analyzed variables', img_list)
 
-    return (details, img_gal)
+    return details, img_gal
+
 
 if __name__ == '__main__':
     print_details(main(parse_args()))

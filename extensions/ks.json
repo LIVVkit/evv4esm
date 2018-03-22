@@ -1,13 +1,12 @@
 {
     "default_v_fast" : {
         "module" : "extensions/ks.py",
-        "case1" : "default",
-        "dir1" : "/lustre/atlas1/cli106/proj-shared/imn/ne16_compiler_ensembles",
-        "set1-file": "extensions/input_files/list_default_extended.txt",
-        "case2" : "fast",
-        "dir2" : "/lustre/atlas1/cli106/proj-shared/imn/ne16_compiler_ensembles",
-        "set2-file": "extensions/input_files/list_fast_extended.txt",
-        "critical": 13    
+        "case1" : "MVK.ne16_g37.F1850C5.titan_pgi.G.20180321_171706_wr7mmf",
+        "dir1" : "/lustre/atlas/proj-shared/cli106/kennedy/MVK.ne16_g37.F1850C5.titan_pgi.G.20180321_171706_wr7mmf",
+        "case2" : "MVK.ne16_g37.F1850C5.titan_pgi.G.20180321_171706_wr7mmf",
+        "dir2" : "/lustre/atlas/proj-shared/cli106/kennedy/MVK.ne16_g37.F1850C5.titan_pgi.G.20180321_171706_wr7mmf",
+        "ninst": 30,
+        "critical": 13
     }
 }
 
