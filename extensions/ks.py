@@ -126,10 +126,9 @@ def run(name, config):
     return page
 
 
-def monthly_to_annual_avg(var_data, cal):
-    # FIXME: turn back on once CIME tests are sucessful
-    # if len(var_data) != 12:
-    #     raise ValueError('Error! There are 12 months in a year; you passed in {} monthly averages.'.format(len(var_data)))
+def monthly_to_annual_avg(var_data, cal='ignore'):
+    if len(var_data) != 12:
+        raise ValueError('Error! There are 12 months in a year; you passed in {} monthly averages.'.format(len(var_data)))
     
     # TODO: more advanced calendar handling
     if cal == 'ignore':
@@ -161,7 +160,7 @@ def case_files(args):
     f_sets = {}
     for key, case, dir_ in zip([key1, key2], [args.case1, args.case2], [args.dir1, args.dir2]):
         f = []
-        base = '{d}/run/{c}.cam_????.h0.????-??.nc'.format(d=dir_, c=case)
+        base = '{d}/*cam_????.h0.????-??.nc'.format(d=dir_)
         glb = os.path.normpath(base)
         f.extend(sorted(glob.glob(glb)))
         f_i = OrderedDict()

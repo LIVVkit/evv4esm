@@ -28,25 +28,24 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from __future__ import absolute_import, division, print_function, unicode_literals
-import six
 
 import os
-import sys
 import time
 import argparse
 
 import livvkit
 from livvkit.util import options
 
+
 def parse_args(args=None):
     parser = argparse.ArgumentParser(description=__doc__,
-                formatter_class=argparse.ArgumentDefaultsHelpFormatter) 
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('-e','--extensions',
-            action='store', 
-            nargs='+',            
-            default=None,
-            help='Specify the location of the JSON configuration files for the extended V&V tests to run.')
+    parser.add_argument('-e', '--extensions',
+                        action='store',
+                        nargs='+',
+                        default=None,
+                        help='Specify the location of the JSON configuration files for the extended V&V tests to run.')
   
     parser.add_argument('-o', '--out-dir',
                         default=os.path.join(os.getcwd(), "vv_" + time.strftime("%Y-%m-%d")),
@@ -58,7 +57,7 @@ def parse_args(args=None):
     
     from eve import resources 
     args.livv_resource_dir = livvkit.resource_dir
-    livvkit.resource_dir   = os.sep.join(resources.__path__) 
+    livvkit.resource_dir = os.sep.join(resources.__path__)
     
     return args 
 
@@ -81,13 +80,13 @@ def main(args):
     print(  "  OS Type: "     + livvkit.os_type)
     print(  "  Machine: "     + livvkit.machine)
     print(  "  "              + livvkit.comment)
-   
-    from livvkit import components
+
+    from livvkit.components import validation
     from livvkit import scheduler
     from livvkit.util import functions
     from livvkit.util import elements
     
-    functions.setup_output(jsd=os.path.join(args.livv_resource_dir,'js'))
+    functions.setup_output(jsd=os.path.join(args.livv_resource_dir, 'js'))
     
     l = []
     validation_config = {}
@@ -98,7 +97,7 @@ def main(args):
     for conf in livvkit.validation_model_configs:
         validation_config = functions.merge_dicts(validation_config, 
                                                   functions.read_json(conf))
-    l.extend(scheduler.run_quiet(components.validation, validation_config,
+    l.extend(scheduler.run_quiet(validation, validation_config,
                                  group=False))
     print(" -----------------------------------------------------------------")
     print("   Extensions test suite complete ")
@@ -109,11 +108,9 @@ def main(args):
     functions.write_json(result, livvkit.output_dir, "index.json")
     print("-------------------------------------------------------------------")
     print(" Done!  Results can be seen in a web browser at:")
-    print("   " +  os.path.join(livvkit.output_dir, 'index.html'))
+    print("   " + os.path.join(livvkit.output_dir, 'index.html'))
     print("-------------------------------------------------------------------")
 
-    
 
 if __name__ == '__main__':
     main(parse_args())
-
