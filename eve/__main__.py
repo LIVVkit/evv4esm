@@ -30,6 +30,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import os
+import sys
 import time
 import argparse
 
@@ -62,8 +63,12 @@ def parse_args(args=None):
     return args 
 
 
-def main(args):
+def main(cl_args=None):
     """ Direct execution. """
+
+    if len(sys.argv) > 1:
+        cl_args = sys.argv[1:]
+    args = parse_args(cl_args)
 
     print("--------------------------------------------------------------------")
     print("                    ______  ____    ____  ______                    ") 
@@ -113,4 +118,4 @@ def main(args):
 
 
 if __name__ == '__main__':
-    main(parse_args())
+    main()
