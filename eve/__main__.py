@@ -34,6 +34,7 @@ import sys
 import time
 import argparse
 
+import eve
 import livvkit
 from livvkit.util import options
 
@@ -51,10 +52,24 @@ def parse_args(args=None):
     parser.add_argument('-o', '--out-dir',
                         default=os.path.join(os.getcwd(), "vv_" + time.strftime("%Y-%m-%d")),
                         help='Location to output the EVE webpages.')
-    
+
+    parser.add_argument('-s', '--serve',
+                        nargs='?', type=int, const=8000,
+                        help=' '.join(['Start a simple HTTP server for the output website specified',
+                                       'by OUT_DIR on port SERVE.'
+                                       ])
+                        )
+
+    parser.add_argument('--version',
+                        action='version',
+                        version='EVE {}'.format(eve.__version__),
+                        help="Show EVE's version number and exit"
+                        )
+
     args = parser.parse_args(args)
- 
-    options.parse_args(['-V']+args.extensions + ['-o', args.out_dir])
+
+    if args.extensions:
+        options.parse_args(['-V']+args.extensions + ['-o', args.out_dir])
     
     from eve import resources 
     args.livv_resource_dir = livvkit.resource_dir
@@ -80,41 +95,70 @@ def main(cl_args=None):
     print("                                                                    ")
     print("    Extended Verification and Validation for Earth System Models    ")
     print("--------------------------------------------------------------------")
-    print("\n  Current run: " + livvkit.timestamp)
-    print(  "  User: "        + livvkit.user)
-    print(  "  OS Type: "     + livvkit.os_type)
-    print(  "  Machine: "     + livvkit.machine)
-    print(  "  "              + livvkit.comment)
+    print("")
+    print("  Current run: " + livvkit.timestamp)
+    print("  User: " + livvkit.user)
+    print("  OS Type: " + livvkit.os_type)
+    print("  Machine: " + livvkit.machine)
+    print("  " + livvkit.comment)
 
     from livvkit.components import validation
     from livvkit import scheduler
     from livvkit.util import functions
     from livvkit.util import elements
+
+    if args.extensions:
+        functions.setup_output(jsd=os.path.join(args.livv_resource_dir, 'js'))
     
-    functions.setup_output(jsd=os.path.join(args.livv_resource_dir, 'js'))
-    
-    l = []
-    validation_config = {}
-    print(" -----------------------------------------------------------------")
-    print("   Beginning extensions test suite ")
-    print(" -----------------------------------------------------------------")
-    print("")
-    for conf in livvkit.validation_model_configs:
-        validation_config = functions.merge_dicts(validation_config, 
-                                                  functions.read_json(conf))
-    l.extend(scheduler.run_quiet(validation, validation_config,
-                                 group=False))
-    print(" -----------------------------------------------------------------")
-    print("   Extensions test suite complete ")
-    print(" -----------------------------------------------------------------")
-    print("")
-    
-    result = elements.page("Summary", "", element_list=l)
-    functions.write_json(result, livvkit.output_dir, "index.json")
-    print("-------------------------------------------------------------------")
-    print(" Done!  Results can be seen in a web browser at:")
-    print("   " + os.path.join(livvkit.output_dir, 'index.html'))
-    print("-------------------------------------------------------------------")
+        summary_elements = []
+        validation_config = {}
+        print(" -----------------------------------------------------------------")
+        print("   Beginning extensions test suite ")
+        print(" -----------------------------------------------------------------")
+        print("")
+        for conf in livvkit.validation_model_configs:
+            validation_config = functions.merge_dicts(validation_config,
+                                                      functions.read_json(conf))
+        summary_elements.extend(scheduler.run_quiet(validation, validation_config,
+                                                    group=False))
+        print(" -----------------------------------------------------------------")
+        print("   Extensions test suite complete ")
+        print(" -----------------------------------------------------------------")
+        print("")
+
+        result = elements.page("Summary", "", element_list=summary_elements)
+        functions.write_json(result, livvkit.output_dir, "index.json")
+        print("-------------------------------------------------------------------")
+        print(" Done!  Results can be seen in a web browser at:")
+        print("   " + os.path.join(livvkit.output_dir, 'index.html'))
+        print("-------------------------------------------------------------------")
+
+    if args.serve:
+        try:
+            # Python 3
+            import http.server as server
+            import socketserver as socket
+        except ImportError:
+            # Python 2
+            # noinspection PyPep8Naming
+            import SimpleHTTPServer as server
+            # noinspection PyPep8Naming
+            import SocketServer as socket
+
+        httpd = socket.TCPServer(('', args.serve), server.SimpleHTTPRequestHandler)
+
+        sa = httpd.socket.getsockname()
+        print('\nServing HTTP on {host} port {port} (http://{host}:{port}/)'.format(host=sa[0], port=sa[1]))
+        print('\nView the generated website by navigating to:')
+        print('\n    http://{host}:{port}/{path}/index.html'.format(host=sa[0], port=sa[1],
+                                                                    path=os.path.relpath(args.out_dir)
+                                                                    ))
+        print('\nExit by pressing `ctrl+c` to send a keyboard interrupt.\n')
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            print('\nKeyboard interrupt received, exiting.\n')
+            sys.exit(0)
 
 
 if __name__ == '__main__':

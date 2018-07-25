@@ -1,8 +1,20 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-"""
-The K-S test.
+"""The Kolmogorov-Smirnov Test:
+This tests the null hypothesis that the baseline (n) and modified (m) model
+Short Independent Simulation Ensembles (SISE) represent the same climate
+state, based on the equality of distribution of each variable's annual global
+averag in the standard monthly model output between the two simulations.
+
+The (per variable) null hypothesis uses the non-parametric, two-sample (n and m)
+Kolmogorov-Smirnov test as the univariate test of of equality of distribution of
+global means. The test statistic (t) is the number of variables that reject the
+(per variable) null hypothesis of equality of distribution at a 95% confidence
+level. The (overall) null hypothesis is rejected if t > α, where α is some
+critical number of rejecting variables. The critical value, α, is obtained from
+an empirically derived approximate null distribution of t using resampling
+techniques.
 """
 from __future__ import absolute_import, division, print_function, unicode_literals
 import six
@@ -10,7 +22,6 @@ import six
 import os
 import re
 import glob
-# import calendar
 import argparse
 
 from pprint import pprint
@@ -22,11 +33,9 @@ from scipy import stats
 from netCDF4 import Dataset
 import matplotlib.pyplot as plt
 
-from eve import utils
-
 import livvkit
-from livvkit.util import elements as EL
-from livvkit.util import functions as FN
+from livvkit.util import elements as el
+from livvkit.util import functions as fn
 from livvkit.util.LIVVDict import LIVVDict
 
 
@@ -35,7 +44,7 @@ def parse_args(args=None):
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument('-c', '--config',
-                        type=FN.read_json,
+                        type=fn.read_json,
                         help='A JSON config file containing a `ks` dictionary defining ' +
                              'the options. NOTE: command line options will override file options.')
 
@@ -70,7 +79,6 @@ def parse_args(args=None):
 
     args, _ = parser.parse_known_args(args)
 
-    # FIXME: Test more
     # use config file arguments, but override with command line arguments
     if args.config:
         default_args = parser.parse_args([])
@@ -105,7 +113,7 @@ def run(name, config):
     args = parse_args(config_arg_list)
 
     args.img_dir = os.path.join(livvkit.output_dir, 'validation', 'imgs', name)
-    FN.mkdir_p(args.img_dir)
+    fn.mkdir_p(args.img_dir)
 
     details, img_gal = main(args)
 
@@ -118,25 +126,24 @@ def run(name, config):
               'Data': {'': tbl_data}
               }
     
-    tl = [EL.tab('Table', element_list=[tbl_el]), EL.tab('Gallery', element_list=[img_gal])]
+    tl = [el.tab('Table', element_list=[tbl_el]), el.tab('Gallery', element_list=[img_gal])]
 
-    page = EL.page(name, utils.format_doc(__doc__), tab_list=tl)
+    page = el.page(name, __doc__, tab_list=tl)
     page['critical'] = args.critical
-    
+
     return page
 
 
 def monthly_to_annual_avg(var_data, cal='ignore'):
     if len(var_data) != 12:
-        raise ValueError('Error! There are 12 months in a year; you passed in {} monthly averages.'.format(len(var_data)))
+        raise ValueError('Error! There are 12 months in a year; '
+                         'you passed in {} monthly averages.'.format(len(var_data)))
     
     # TODO: more advanced calendar handling
     if cal == 'ignore':
         # weight each month equally
         avg = np.sum(var_data) / 12.
     else:
-        # for ii in range(0,12):
-        #     _, days = calendar.monthrange(2017, ii+1)
         avg = None
     return avg
 
@@ -272,13 +279,12 @@ def print_details(details):
 
 
 def summarize_result(results_page):
-    summary = {}
-    summary['Case'] = results_page['Title']
+    summary = {'Case': results_page['Title']}
     for tab in results_page['Data']['Tabs']:
-        for el in tab['Elements']:
-            if el['Type'] == 'V-H Table':
-                summary['Variables Analyzed'] = len(el['Data'][''].keys())        
-                rejects = [var for var, dat in el['Data'][''].items() if dat['h0'] == 'reject']
+        for elem in tab['Elements']:
+            if elem['Type'] == 'V-H Table':
+                summary['Variables Analyzed'] = len(elem['Data'][''].keys())
+                rejects = [var for var, dat in elem['Data'][''].items() if dat['h0'] == 'reject']
                 summary['Rejecting'] = len(rejects)
                 summary['Critical Value'] = results_page['critical']
                 summary['Ensembles'] = 'identical' if len(rejects) < results_page['critical'] else 'distinct'
@@ -296,7 +302,7 @@ def populate_metadata():
     
     metadata = {'Type': 'ValSummary',
                 'Title': 'Validation',
-                'TableTitle': 'Kolmogorov–Smirnov',
+                'TableTitle': 'Kolmogorov-Smirnov',
                 'Headers': ['Variables Analyzed', 'Rejecting', 'Critical Value', 'Ensembles']}
     return metadata
     
@@ -315,6 +321,7 @@ def main(args):
             for file_ in i_files:
                 date_str = file_date_str(file_)
 
+                data = None
                 try:
                     data = Dataset(file_, 'r')
                 except OSError as E:
@@ -338,7 +345,8 @@ def main(args):
 
         # array of annual averages for
         for var in averages[case]:
-                averages[case][var]['annuals'] = np.array([averages[case][var][m]['annual'] for m in sorted(six.iterkeys(averages[case][var]))])
+                averages[case][var]['annuals'] = np.array(
+                        [averages[case][var][m]['annual'] for m in sorted(six.iterkeys(averages[case][var]))])
 
     # now, we got the data, so let's get some stats
     var_set1 = set([var for var in averages[args.case1]])
@@ -350,7 +358,7 @@ def main(args):
         details[var]['T test (t, p)'] = stats.ttest_ind(averages[args.case1][var]['annuals'],
                                                         averages[args.case2][var]['annuals'],
                                                         equal_var=False, nan_policy='omit')
-        if np.isnan(details[var]['T test (t, p)']).any():
+        if np.isnan(details[var]['T test (t, p)']).any() or np.isinf(details[var]['T test (t, p)']).any():
             details[var]['T test (t, p)'] = (None, None)
 
         details[var]['K-S test (D, p)'] = stats.ks_2samp(averages[args.case1][var]['annuals'],
@@ -368,18 +376,24 @@ def main(args):
         details[var]['std (case 1, case 2)'] = (np.std(averages[args.case1][var]['annuals']),
                                                 np.std(averages[args.case2][var]['annuals']))
 
-        details[var]['h0'] = 'reject' if details[var]['K-S test (D, p)'][1] < 0.05 else 'accept'
+        if details[var]['T test (t, p)'][0] is None:
+            details[var]['h0'] = '-'
+        elif details[var]['K-S test (D, p)'][1] < 0.05:
+            details[var]['h0'] = 'reject'
+        else:
+            details[var]['h0'] = 'accept'
 
         img_file = os.path.relpath(os.path.join(args.img_dir, var + '.png'), os.getcwd())
         prob_plot(args, var, averages, 20, img_file)
         
         img_desc = 'Mean annual global average of {} for <em>{}</em> is {:.3e} and for <em>{}</em> is {:.3e}'.format(
-                        var, args.case1, details[var]['mean (case 1, case 2)'][0], args.case2, details[var]['mean (case 1, case 2)'][1])
+                        var, args.case1, details[var]['mean (case 1, case 2)'][0],
+                        args.case2, details[var]['mean (case 1, case 2)'][1])
 
         img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
-        img_list.append(EL.image(var, img_desc, img_link))
+        img_list.append(el.image(var, img_desc, img_link))
         
-    img_gal = EL.gallery('Analyzed variables', img_list)
+    img_gal = el.gallery('Analyzed variables', img_list)
 
     return details, img_gal
 

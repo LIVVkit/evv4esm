@@ -23,9 +23,7 @@ import argparse
 
 from collections import OrderedDict
 
-from eve import utils
 from livvkit.util import elements
-from livvkit.util import functions 
 
 import rpy2.robjects as robjects
 from rpy2.robjects import numpy2ri
@@ -88,7 +86,6 @@ def parse_args(args=None):
 
     args, _ = parser.parse_known_args(args)
 
-    # FIXME: Test more
     # use config file arguments, but override with command line arguments
     if args.config:
         default_args = parser.parse_args([])
@@ -118,7 +115,7 @@ def run(name, config):
 
     el = elements.vtable('Results', list(details.keys()), details)
 
-    return elements.page(name, utils.format_doc(__doc__), el)
+    return elements.page(name, __doc__, el)
 
 
 def populate_metadata():
@@ -172,7 +169,9 @@ def main(args):
     crossmatch_pyr = robjects.r("""
                crossmatch_r <- function(indir1, indir2, casename1, casename2, season, ens_set1, ens_set2){{
                    source("{}/crossmatch_mahalanobis_ens.R")
-                   x = crossmatch_mahalanobis(indir1, indir2, casename1, casename2, season, as.vector(ens_set1), as.vector(ens_set2))
+                   x = crossmatch_mahalanobis(indir1, indir2, 
+                                              casename1, casename2, 
+                                              season, as.vector(ens_set1), as.vector(ens_set2))
                    return(x)
                }}
                """.format(args.R_dir))
@@ -188,7 +187,7 @@ def main(args):
                            ('critical', args.critical),
                            ])
 
-    if (details['T'] < args.critical):
+    if details['T'] < args.critical:
         details['h0'] = 'reject'
     else:
         details['h0'] = 'accept'
@@ -196,10 +195,10 @@ def main(args):
     details['approxpval'] = x[5][0]
     details['set1'] = ens_set1
     details['set2'] = ens_set2
-    details['a1']   = int(x[0][0])
-    details['Ea1']  = x[1][0]
-    details['Va1']  = x[2][0]
-    details['dev']  = x[3][0]
+    details['a1'] = int(x[0][0])
+    details['Ea1'] = x[1][0]
+    details['Va1'] = x[2][0]
+    details['dev'] = x[3][0]
     details['set1'] = ens_set1
     details['set2'] = ens_set2
 
