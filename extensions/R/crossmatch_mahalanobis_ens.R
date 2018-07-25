@@ -26,6 +26,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
 crossmatch_mahalanobis <- function(indir1, indir2, caseset1, caseset2, season, ens_set1, ens_set2) {
 
 	suppressMessages(library(ncdf4))

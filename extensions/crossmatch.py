@@ -42,6 +42,7 @@ more frequently, resulting in a larger T.
 Note: because T is based on simple combinatorics, it does not depend on the assumed distribution of
 the baseline or perturbed data vectors (Rosenbaum, 2005).
 """
+
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import os
