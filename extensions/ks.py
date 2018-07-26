@@ -32,7 +32,7 @@
 This tests the null hypothesis that the baseline (n) and modified (m) model
 Short Independent Simulation Ensembles (SISE) represent the same climate
 state, based on the equality of distribution of each variable's annual global
-averag in the standard monthly model output between the two simulations.
+average in the standard monthly model output between the two simulations.
 
 The (per variable) null hypothesis uses the non-parametric, two-sample (n and m)
 Kolmogorov-Smirnov test as the univariate test of of equality of distribution of
