@@ -82,7 +82,7 @@ def parse_args(args=None):
 def main(cl_args=None):
     """ Direct execution. """
 
-    if len(sys.argv) > 1:
+    if cl_args is None and len(sys.argv) > 1:
         cl_args = sys.argv[1:]
     args = parse_args(cl_args)
 
