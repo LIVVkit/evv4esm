@@ -92,6 +92,7 @@ def parse_args(args=None):
                         default=os.path.join(os.getcwd(), 'archive'),
                         help='Location of case 2 files.')
 
+    # noinspection PyTypeChecker
     parser.add_argument('--ninst',
                         default=30, type=int,
                         help='The number of instances in both cases.')
@@ -291,7 +292,7 @@ def prob_plot(args, var, averages, n_q, img_file):
 
 
 def print_summary(summary):
-    print('    Kolmogorov–Smirnov Test: {}'.format(summary['']['Case']))
+    print('    Kolmogorov-Smirnov Test: {}'.format(summary['']['Case']))
     print('      Variables analyzed: {}'.format(summary['']['Variables Analyzed']))
     print('      Rejecting: {}'.format(summary['']['Rejecting']))
     print('      Critical value: {}'.format(summary['']['Critical Value']))
@@ -351,7 +352,7 @@ def main(args):
 
                 data = None
                 try:
-                    data = Dataset(file_, 'r')
+                    data = Dataset(file_)
                 except OSError as E:
                     six.raise_from(BaseException('Could not open netCDF dataset: {}'.format(file_)), E)
 
@@ -369,7 +370,7 @@ def main(args):
         for var, instances in six.iteritems(averages[case]):
             for inst in instances:
                 months = [instances[inst][date] for date in instances[inst]]
-                averages[case][var][inst]['annual'] = monthly_to_annual_avg(months, cal='ignore')
+                averages[case][var][inst]['annual'] = monthly_to_annual_avg(months)
 
         # array of annual averages for
         for var in averages[case]:
@@ -385,7 +386,7 @@ def main(args):
     for var in sorted(common_vars):
         details[var]['T test (t, p)'] = stats.ttest_ind(averages[args.case1][var]['annuals'],
                                                         averages[args.case2][var]['annuals'],
-                                                        equal_var=False, nan_policy='omit')
+                                                        equal_var=False, nan_policy=str('omit'))
         if np.isnan(details[var]['T test (t, p)']).any() or np.isinf(details[var]['T test (t, p)']).any():
             details[var]['T test (t, p)'] = (None, None)
 
