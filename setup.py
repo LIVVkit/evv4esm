@@ -89,7 +89,7 @@ setup(
           'eve'
           ],
 
-      entry_points={'console_scripts': ['livv = livvkit.__main__:main']},
+      entry_points={'console_scripts': ['eve = eve.__main__:main']},
 
       zip_safe=False,
       )
