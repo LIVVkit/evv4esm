@@ -76,6 +76,7 @@ setup(
 
       install_requires=[
           'six',
+          'rpy2',
           'numpy',
           'scipy',
           'pandas',
