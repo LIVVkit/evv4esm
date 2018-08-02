@@ -14,7 +14,7 @@
    height="35"
    id="svg2"
    version="1.1"
-   inkscape:version="0.48.4 r9939"
+   inkscape:version="0.92.3 (2405546, 2018-03-11)"
    sodipodi:docname="icon.svg">
   <sodipodi:namedview
      id="base"
@@ -28,10 +28,10 @@
      inkscape:cy="-0.30414355"
      inkscape:document-units="px"
      showgrid="false"
-     inkscape:window-width="1615"
-     inkscape:window-height="1026"
-     inkscape:window-x="65"
-     inkscape:window-y="24"
+     inkscape:window-width="3373"
+     inkscape:window-height="1385"
+     inkscape:window-x="67"
+     inkscape:window-y="27"
      inkscape:window-maximized="1"
      inkscape:current-layer="layer1" />
   <defs
@@ -114,74 +114,50 @@
        inkscape:connector-curvature="0" />
     <text
        xml:space="preserve"
-       style="font-size:36px;font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#f26c3a;fill-opacity:1;stroke:none;font-family:KacstTitle;-inkscape-font-specification:KacstTitle Medium"
+       style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;line-height:0%;font-family:KacstTitle;-inkscape-font-specification:'KacstTitle Medium';text-align:start;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#f26c3a;fill-opacity:1;stroke:none"
        x="-11.427988"
        y="1085.3962"
-       id="text3000"
-       sodipodi:linespacing="125%"><tspan
+       id="text3000"><tspan
          sodipodi:role="line"
          id="tspan3002"
          x="-11.427988"
-         y="1085.3962" /></text>
+         y="1085.3962"
+         style="font-size:36px;line-height:1.25"> </tspan></text>
     <text
        xml:space="preserve"
-       style="font-size:40.31751632999999657px;font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#f26c3a;fill-opacity:1;stroke:none;font-family:KacstTitle;-inkscape-font-specification:KacstTitle Medium"
+       style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;line-height:0%;font-family:KacstTitle;-inkscape-font-specification:'KacstTitle Medium';text-align:start;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#f26c3a;fill-opacity:1;stroke:none"
        x="-1.4051974"
        y="1028.3063"
        id="text2996"
-       sodipodi:linespacing="125%"
        transform="scale(0.97972095,1.0206988)"><tspan
          sodipodi:role="line"
          id="tspan2998"
          x="-1.4051974"
          y="1028.3063"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;fill:#f26c3a;fill-opacity:1;font-family:Arial;-inkscape-font-specification:Arial">E</tspan></text>
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40.31751633px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;fill:#f26c3a;fill-opacity:1">E</tspan></text>
     <text
-       sodipodi:linespacing="125%"
        id="text3004"
        y="1028.3063"
        x="19.592438"
-       style="font-size:40.31751632999999657px;font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#f26c3a;fill-opacity:1;stroke:none;font-family:KacstTitle;-inkscape-font-specification:KacstTitle Medium"
+       style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;line-height:0%;font-family:KacstTitle;-inkscape-font-specification:'KacstTitle Medium';text-align:start;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#f26c3a;fill-opacity:1;stroke:none"
        xml:space="preserve"
        transform="scale(0.97972095,1.0206988)"><tspan
          y="1028.3063"
          x="19.592438"
          id="tspan3006"
          sodipodi:role="line"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;fill:#f26c3a;fill-opacity:1;font-family:Arial;-inkscape-font-specification:Arial">V</tspan></text>
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40.31751633px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;fill:#f26c3a;fill-opacity:1">V</tspan></text>
     <text
-       sodipodi:linespacing="125%"
        id="text3008"
        y="1028.3063"
-       x="24.599167"
-       style="font-size:40.31751632999999657px;font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#f26c3a;fill-opacity:1;stroke:none;font-family:KacstTitle;-inkscape-font-specification:KacstTitle Medium"
+       x="42.971741"
+       style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;line-height:0%;font-family:KacstTitle;-inkscape-font-specification:'KacstTitle Medium';text-align:start;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#f26c3a;fill-opacity:1;stroke:none"
        xml:space="preserve"
        transform="scale(0.97972095,1.0206988)"><tspan
          y="1028.3063"
-         x="24.599167"
+         x="42.971741"
          id="tspan3010"
          sodipodi:role="line"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;fill:#f26c3a;fill-opacity:1;font-family:Arial;-inkscape-font-specification:Arial">V</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-size:40.31751632999999657px;font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:start;fill:#f26c3a;fill-opacity:1;stroke:none;font-family:KacstTitle;-inkscape-font-specification:KacstTitle Medium"
-       x="46.002018"
-       y="1028.3063"
-       id="text2996-3"
-       sodipodi:linespacing="125%"
-       transform="scale(0.97972095,1.0206988)"><tspan
-         sodipodi:role="line"
-         id="tspan2998-6"
-         x="46.002018"
-         y="1028.3063"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;fill:#f26c3a;fill-opacity:1;font-family:Arial;-inkscape-font-specification:Arial">E</tspan></text>
-    <rect
-       style="fill:#f26c3a;fill-opacity:1;fill-rule:nonzero;stroke:#f26c3a;stroke-width:4.50000000000000000;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
-       id="rect3091"
-       width="3.5"
-       height="3.5"
-       x="-36.525246"
-       y="-1047.3409"
-       transform="scale(-1,-1)" />
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40.31751633px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;fill:#f26c3a;fill-opacity:1">V</tspan></text>
   </g>
 </svg>
