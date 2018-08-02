@@ -51,7 +51,7 @@ setup(
       long_description=long_desc,
       long_description_content_type='text/markdown',
 
-      url='https://code.ornl.gov/LIVVkit/eve',
+      url='https://github.com/LIVVkit/evv4esm',
 
       author='Joseph H. Kennedy',
       author_email='kennedyjh@ornl.gov',
