@@ -1,5 +1,7 @@
 include LICENSE
 include README.md
 
-recursive-include evv4esm/resources *
-recursive-include extensions *
+graft evv4esm/resources
+graft evv4esm/extensions
+
+global-exclude *.py[co]
