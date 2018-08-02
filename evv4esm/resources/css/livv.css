@@ -1,0 +1,206 @@
+/******************************************************************************
+  Basic Styling Overrides
+******************************************************************************/
+html {
+	font-family: 'Lato', helvetica, sans-serif;
+	height: 100%;
+}
+
+body {
+	height: 100%;
+	margin-top: 0px;
+	margin-right: 0px;
+	margin-bottom: 0px;
+	margin-left: 0px;
+    min-width: 1125px;
+    background: url("../imgs/background.jpg") no-repeat center center fixed;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+}
+
+h1, h2, h3, h4 {
+	font-family: 'Lato', helvetica, sans-serif;
+}
+
+hr {
+    color: #222222;
+}
+
+a {
+    text-decoration: none;
+    color: #F26C3A;
+}
+
+/******************************************************************************
+  Header/Footer Styling
+******************************************************************************/
+#header {
+    min-width: 800px;
+	background-color: #222222;
+    border-bottom: 1px solid #222222;
+    font-size: 1.5em;
+    font-weight: 500;
+}
+
+#header:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+#header-spacer {
+}
+
+#header a{
+    text-decoration: none;
+}
+
+#header-icon {
+    float: left; 
+    padding: 12px; 
+    padding-left: 15px;
+    width: 70px; 
+}
+
+#header-home {
+	float: left;
+    color: #F26C3A;
+    height: 1.25em;
+   	line-height: 1.25em;
+   	margin-top: 15px;
+    text-align: left;
+    width: 15%;
+}
+
+#header-title {
+	float: left;
+    color: #F26C3A;
+	height: 1.25em;
+	line-height: 1.25em;
+	margin-top: 15px;
+    text-align: center;
+    width: 50%;
+}
+
+#header-docs {
+	float: left;
+    color: #F26C3A;
+	height: 1.25em;
+	line-height: 1.25em;
+	margin-top: 15px;
+    padding-right: 15px;
+    text-align: right;
+    width: 25%;
+}
+
+#wrapper {
+    margin: auto;
+    width: 80%;
+    background-color: white;
+    overflow: auto;
+}
+
+#nav {
+    width: 19%;
+    float: left;
+    padding: 20px;
+}
+
+#content {
+    padding: 10px;
+    width: 71%;
+    float: left;
+}
+
+#content div {
+    background-color: white;
+}
+
+/******************************************************************************
+  TableStyling
+******************************************************************************/
+table {
+    width: 100%;
+    border: 2px solid #F26C3A;
+    border-spacing: 0;
+}
+
+th {
+   background-color: #512E5F;
+   color: #ffffff;
+   padding: 10px;
+   border-bottom: 2px solid #F26C3A;
+}
+
+td {
+    padding: 2px;
+    text-align: center;
+}
+
+.testName td {
+    font-weight: 600;
+    text-align: left;
+}
+
+.testCase {
+    text-align: right;
+}
+
+/******************************************************************************
+  Element Styling 
+******************************************************************************/
+.error {}
+
+.error p {
+    color: red;
+}
+
+.tabs {
+    background: transparent;
+}
+
+.diff {
+    border: 2px solid #F26C3A;
+    padding: 4px;
+}
+
+.diff p {
+    line-height: 1.05em;
+    margin: 0px;
+    padding-left:10%;
+    font-family: monospace;
+}
+
+.diff p.old {
+    background-color: #ffcccc;
+}
+
+.diff p.new {
+    background-color: #ccffcc;
+}
+
+.bitForBit {}
+
+.table {}
+
+.gallery {}
+
+.gallery p {
+    text-align: center;
+    padding: none;
+    margin: none;
+}
+
+.gallery div {
+    float: left;
+    margin: 10px;
+    display: inline;
+}
+
+.gallery img {
+    border: 1px solid #F26C3A;
+}
+
+.summary {}
