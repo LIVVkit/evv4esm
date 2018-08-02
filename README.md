@@ -1,7 +1,7 @@
   Extended Verification and Validation for Earth System Models
 ===============================================================================
 
-EVE is a python-based toolkit for extended verification and validation of Earth
+EVV is a python-based toolkit for extended verification and validation of Earth
 system models (ESMs). Currently, it provide a number test to determine if
 modifications to an ESM is *climate changing.*  
   

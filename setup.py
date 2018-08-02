@@ -38,11 +38,11 @@ from setuptools import setup
 here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, 'README.md'), 'r') as f:
     long_desc = f.read()
-with open(os.path.join(here, 'eve', '__init__.py')) as f:
+with open(os.path.join(here, 'evv4esm', '__init__.py')) as f:
     init_file = f.read()
 
 setup(
-      name='eve',
+      name='evv4esm',
       version=re.search(r'{}\s*=\s*[(]([^)]*)[)]'.format('__version_info__'),
                         init_file
                         ).group(1).replace(', ', '.'),
@@ -85,10 +85,10 @@ setup(
           ],
 
       packages=[
-          'eve'
+          'evv4esm'
           ],
 
-      entry_points={'console_scripts': ['eve = eve.__main__:main']},
+      entry_points={'console_scripts': ['evv = evv4esm.__main__:main']},
 
       zip_safe=False,
       )

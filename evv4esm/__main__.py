@@ -35,7 +35,7 @@ import sys
 import time
 import argparse
 
-import eve
+import evv4esm
 import livvkit
 from livvkit.util import options
 
@@ -52,7 +52,7 @@ def parse_args(args=None):
   
     parser.add_argument('-o', '--out-dir',
                         default=os.path.join(os.getcwd(), "vv_" + time.strftime("%Y-%m-%d")),
-                        help='Location to output the EVE webpages.')
+                        help='Location to output the EVV webpages.')
 
     parser.add_argument('-s', '--serve',
                         nargs='?', type=int, const=8000,
@@ -63,8 +63,8 @@ def parse_args(args=None):
 
     parser.add_argument('--version',
                         action='version',
-                        version='EVE {}'.format(eve.__version__),
-                        help="Show EVE's version number and exit"
+                        version='EVV {}'.format(evv4esm.__version__),
+                        help="Show EVV's version number and exit"
                         )
 
     args = parser.parse_args(args)
@@ -72,7 +72,7 @@ def parse_args(args=None):
     if args.extensions:
         options.parse_args(['-V']+args.extensions + ['-o', args.out_dir])
     
-    from eve import resources 
+    from evv4esm import resources
     args.livv_resource_dir = livvkit.resource_dir
     livvkit.resource_dir = os.sep.join(resources.__path__)
     
@@ -87,12 +87,12 @@ def main(cl_args=None):
     args = parse_args(cl_args)
 
     print("--------------------------------------------------------------------")
-    print("                    ______  ____    ____  ______                    ") 
-    print("                   |  ____| \ \ \  / / / |  ____|                   ")
-    print("                   | |__     \ \ \/ / /  | |__                      ")
-    print("                   |  __|     \ \/ / /   |  __|                     ")
-    print("                   | |____     \  / /    | |____                    ")
-    print("                   |______|     \/_/     |______|                   ")
+    print("                   ______  __      __ __      __                    ")
+    print("                  |  ____| \ \    / / \ \    / /                    ")
+    print("                  | |__     \ \  / /   \ \  / /                     ")
+    print("                  |  __|     \ \/ /     \ \/ /                      ")
+    print("                  | |____     \  /       \  /                       ")
+    print("                  |______|     \/         \/                        ")
     print("                                                                    ")
     print("    Extended Verification and Validation for Earth System Models    ")
     print("--------------------------------------------------------------------")
