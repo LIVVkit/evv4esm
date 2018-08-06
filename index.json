@@ -1,0 +1,31 @@
+{
+    "Data": {
+        "Elements": [
+            {
+                "TableTitle": "Kolmogorov-Smirnov", 
+                "Data": {
+                    "20180731_191347_qpalvb": {
+                        "": {
+                            "Case": "20180731_191347_qpalvb", 
+                            "Variables Analyzed": 378, 
+                            "Critical Value": 13.0, 
+                            "Rejecting": 9, 
+                            "Ensembles": "identical"
+                        }
+                    }
+                }, 
+                "Type": "ValSummary", 
+                "Headers": [
+                    "Variables Analyzed", 
+                    "Rejecting", 
+                    "Critical Value", 
+                    "Ensembles"
+                ], 
+                "Title": "Validation"
+            }
+        ]
+    }, 
+    "Type": "Page", 
+    "Description": "", 
+    "Title": "Summary"
+}

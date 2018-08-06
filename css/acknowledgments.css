@@ -1,0 +1,62 @@
+#acknowledgments {
+    clear: both;
+    width: 80%;
+    min-width: 800px;
+    padding: 1em 0px 0.5em 0px;
+    border: 0px solid white; 
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 120px;
+    text-align: justify;
+    border-style: solid;
+    color: #111111;
+    background-color: white;
+}
+
+#acknowledgments a {
+	color: #F26C3A;
+    text-decoration: none;
+}
+
+#acklogo {
+    width: 98%;
+    padding-top: 15px;
+    text-align: justify;
+}
+
+#acklogo {
+    margin-left: auto; 
+    margin-right: auto;
+    text-align: justify;
+}
+
+#acklogo:after {
+    content: "";
+    width: 100%;
+    display: block;
+}
+
+#acklogo a {
+    vertical-align: top;
+    display: inline-block;
+}
+    
+#logoORNL {
+    padding-top: 30px;
+    height: 75px;
+}
+
+#logoDOESC {
+    padding-top: 30px;
+    height: 75px;
+}
+
+#logoBER {
+    height: 125px;
+    padding-right: 50px;
+}
+
+#CMDV {
+    text-align: center;
+    padding: 0px 10px;
+}
