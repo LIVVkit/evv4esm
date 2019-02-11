@@ -48,8 +48,6 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import six
 
 import os
-import re
-import glob
 import argparse
 
 from pprint import pprint
@@ -65,6 +63,9 @@ import livvkit
 from livvkit.util import elements as el
 from livvkit.util import functions as fn
 from livvkit.util.LIVVDict import LIVVDict
+
+from evv4esm.ensembles import e3sm
+from evv4esm.ensembles.tools import monthly_to_annual_avg
 
 
 def parse_args(args=None):
@@ -163,28 +164,6 @@ def run(name, config):
     return page
 
 
-def monthly_to_annual_avg(var_data, cal='ignore'):
-    if len(var_data) != 12:
-        raise ValueError('Error! There are 12 months in a year; '
-                         'you passed in {} monthly averages.'.format(len(var_data)))
-    
-    # TODO: more advanced calendar handling
-    if cal == 'ignore':
-        # weight each month equally
-        avg = np.sum(var_data) / 12.
-    else:
-        avg = None
-    return avg
-
-
-def file_instance(case_file):
-    return int(re.search(r'cam_[0-9]+', case_file).group(0).replace('cam_', ''))
-
-
-def file_date_str(case_file):
-    return re.search(r'h0\.[0-9]+-[0-9]+.nc', case_file).group(0).replace('h0.', '').replace('.nc', '')
-
-
 def case_files(args):
     # ensure unique case names for the dictionary
     key1 = args.case1
@@ -192,20 +171,9 @@ def case_files(args):
     if args.case1 == args.case2:
         key1 += '1'
         key2 += '2'
-    
-    f_sets = {}
-    for key, case, dir_ in zip([key1, key2], [args.case1, args.case2], [args.dir1, args.dir2]):
-        f = []
-        base = '{d}/*cam_????.h0.????-??.nc'.format(d=dir_)
-        glb = os.path.normpath(base)
-        f.extend(sorted(glob.glob(glb)))
-        f_i = OrderedDict()
-        for ii in range(1, args.ninst+1):
-            f_i[ii] = sorted(filter(lambda x: file_instance(x) == ii, f), key=file_date_str)
-            if len(f_i[ii]) > 12:
-                f_i[ii] = f_i[ii][-12:]
 
-        f_sets[key] = f_i
+    f_sets = {key1: e3sm.component_monthly_files(args.dir1, 'cam', args.ninst),
+              key2: e3sm.component_monthly_files(args.dir2, 'cam', args.ninst)}
 
     return f_sets, key1, key2
 
@@ -348,7 +316,7 @@ def main(args):
         for inst, i_files in six.iteritems(inst_dict):
             # Get monthly averages from files
             for file_ in i_files:
-                date_str = file_date_str(file_)
+                date_str = e3sm.file_date_str(file_)
 
                 data = None
                 try:
