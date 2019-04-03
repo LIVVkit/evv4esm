@@ -38,7 +38,7 @@ from collections import OrderedDict
 
 
 def component_file_instance(component, case_file):
-    search_regex = r'{}_[0-9]+'.format(component)
+    search_regex = r'{c}_[0-9]+'.format(c=component)
     result = re.search(search_regex, case_file).group(0)
     return int(result.replace('cam_', ''))
 
@@ -50,7 +50,7 @@ def file_date_str(case_file):
 
 
 def component_monthly_files(dir_, component, ninst):
-    base = '{d}/*cam_????.h0.????-??.nc'.format(d=dir_)
+    base = '{d}/*{c}_????.h0.????-??.nc'.format(d=dir_, c=component)
     search = os.path.normpath(base)
     result = sorted(glob.glob(search))
 

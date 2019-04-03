@@ -29,7 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """The Kolmogorov-Smirnov Test:
-This tests the null hypothesis that the baseline (n) and modified (m) model
+This tests the null hypothesis that the reference (n) and modified (m) model
 Short Independent Simulation Ensembles (SISE) represent the same climate
 state, based on the equality of distribution of each variable's annual global
 average in the standard monthly model output between the two simulations.
@@ -54,10 +54,8 @@ from pprint import pprint
 from collections import OrderedDict
     
 import numpy as np
-import pandas as pd
 from scipy import stats
 from netCDF4 import Dataset
-import matplotlib.pyplot as plt
 
 import livvkit
 from livvkit.util import elements as el
@@ -65,7 +63,7 @@ from livvkit.util import functions as fn
 from livvkit.util.LIVVDict import LIVVDict
 
 from evv4esm.ensembles import e3sm
-from evv4esm.ensembles.tools import monthly_to_annual_avg
+from evv4esm.ensembles.tools import monthly_to_annual_avg, prob_plot
 
 
 def parse_args(args=None):
@@ -178,87 +176,6 @@ def case_files(args):
     return f_sets, key1, key2
 
 
-def prob_plot(args, var, averages, n_q, img_file):
-    # NOTE: Following the methods described in
-    #       https://stackoverflow.com/questions/43285752
-    #       to create the Q-Q and P-P plots
-    q = np.linspace(0, 100, n_q+1)
-    avgs1 = averages[args.case1][var]['annuals']
-    avgs2 = averages[args.case2][var]['annuals']
-    avgs_all = np.concatenate((avgs1, avgs2))
-    avgs_min = np.min(avgs_all)
-    avgs_max = np.max(avgs_all)
-
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(10, 10))
-    plt.rc('font', family='serif')
-  
-    ax1.set_title('Q-Q Plot')
-    ax1.set_xlabel('{} pdf'.format(args.case1))
-    ax1.set_ylabel('{} pdf'.format(args.case2))
-
-    # NOTE: Axis switched here from Q-Q plot because cdf reflects about the 1-1 line
-    ax2.set_title('P-P Plot')
-    ax2.set_xlabel('{} cdf'.format(args.case2))
-    ax2.set_ylabel('{} cdf'.format(args.case1))
-    
-    ax3.set_title('{} pdf'.format(args.case1))
-    ax3.set_xlabel('Unity-based normalization of annual global averages')
-    ax3.set_ylabel('Frequency')
-
-    ax4.set_title('{} pdf'.format(args.case2))
-    ax4.set_xlabel('Unity-based normalization of annual global averages')
-    ax4.set_ylabel('Frequency')
-
-    norm_rng = [0.0, 1.0]
-    ax1.plot(norm_rng, norm_rng, 'gray', zorder=1)
-    ax1.set_xlim(tuple(norm_rng))
-    ax1.set_ylim(tuple(norm_rng))
-    ax1.autoscale()
-    
-    ax2.plot(norm_rng, norm_rng, 'gray', zorder=1)
-    ax2.set_xlim(tuple(norm_rng))
-    ax2.set_ylim(tuple(norm_rng))
-    ax2.autoscale()
-
-    ax3.set_xlim(tuple(norm_rng))
-    ax3.autoscale()
-
-    ax4.set_xlim(tuple(norm_rng))
-    ax4.autoscale()
-
-    # NOTE: Produce unity-based normalization of data for the Q-Q plots because
-    #       matplotlib can't handle small absolute values or data ranges. See
-    #          https://github.com/matplotlib/matplotlib/issues/6015
-    if not np.allclose(avgs_min, avgs_max, atol=np.finfo(avgs_max).eps):
-        norm1 = (avgs1 - avgs_min)/(avgs_max - avgs_min)
-        norm2 = (avgs2 - avgs_min)/(avgs_max - avgs_min)
-        
-        ax1.scatter(np.percentile(norm1, q), np.percentile(norm2, q), zorder=2)
-        ax3.hist(norm1, bins=n_q)
-        ax4.hist(norm2, bins=n_q)
-    
-    # bin both series into equal bins and get cumulative counts for each bin
-    bnds = np.linspace(avgs_min, avgs_max, n_q)
-    if not np.allclose(bnds, bnds[0], atol=np.finfo(bnds[0]).eps):
-        ppxb = pd.cut(avgs1, bnds)
-        ppyb = pd.cut(avgs2, bnds)
-
-        ppxh = ppxb.value_counts().sort_index(ascending=True)/len(ppxb)
-        ppyh = ppyb.value_counts().sort_index(ascending=True)/len(ppyb)
-
-        ppxh = np.cumsum(ppxh)
-        ppyh = np.cumsum(ppyh)
-
-        ax2.scatter(ppyh, ppxh, zorder=2)
-    
-    plt.tight_layout()
-    plt.savefig(img_file, bbox_inches='tight')
-
-    plt.close(fig)
-
-    return img_file
-
-
 def print_summary(summary):
     print('    Kolmogorov-Smirnov Test: {}'.format(summary['']['Case']))
     print('      Variables analyzed: {}'.format(summary['']['Variables Analyzed']))
@@ -342,8 +259,8 @@ def main(args):
 
         # array of annual averages for
         for var in averages[case]:
-                averages[case][var]['annuals'] = np.array(
-                        [averages[case][var][m]['annual'] for m in sorted(six.iterkeys(averages[case][var]))])
+            averages[case][var]['annuals'] = np.array(
+                    [averages[case][var][m]['annual'] for m in sorted(six.iterkeys(averages[case][var]))])
 
     # now, we got the data, so let's get some stats
     var_set1 = set([var for var in averages[args.case1]])
@@ -381,7 +298,9 @@ def main(args):
             details[var]['h0'] = 'accept'
 
         img_file = os.path.relpath(os.path.join(args.img_dir, var + '.png'), os.getcwd())
-        prob_plot(args, var, averages, 20, img_file)
+        prob_plot(averages[args.case1][var]['annuals'],
+                  averages[args.case2][var]['annuals'],
+                  20, img_file, test_name=args.case1, ref_name=args.case2)
         
         img_desc = 'Mean annual global average of {} for <em>{}</em> is {:.3e} and for <em>{}</em> is {:.3e}'.format(
                         var, args.case1, details[var]['mean (case 1, case 2)'][0],
