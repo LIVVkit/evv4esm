@@ -30,11 +30,18 @@
 
 """E3SM specific ensemble functions."""
 
+from __future__ import absolute_import, division, print_function, unicode_literals
+import six
+
 import os
 import re
 import glob
 
 from collections import OrderedDict
+
+import numpy as np
+import pandas as pd
+from netCDF4 import Dataset
 
 
 def component_file_instance(component, case_file):
@@ -62,3 +69,35 @@ def component_monthly_files(dir_, component, ninst):
             instance_files[ii] = instance_files[ii][-12:]
 
     return instance_files
+
+
+def gather_monthly_averages(ensemble_files):
+    monthly_avgs = []
+    for case, inst_dict in six.iteritems(ensemble_files):
+        for inst, i_files in six.iteritems(inst_dict):
+            # Get monthly averages from files
+            for file_ in i_files:
+                date_str = file_date_str(file_)
+
+                data = None
+                try:
+                    data = Dataset(file_)
+                except OSError as E:
+                    six.raise_from(BaseException('Could not open netCDF dataset: {}'.format(file_)), E)
+
+                for var in data.variables.keys():
+                    if len(data.variables[var].shape) < 2 or var in ['time_bnds', 'date_written', 'time_written']:
+                        continue
+                    elif 'ncol' not in data.variables[var].dimensions:
+                        continue
+                    elif len(data.variables[var].shape) == 3:
+                        m = np.mean(data.variables[var][0, :, :])
+                    elif len(data.variables[var].shape) == 2:
+                        m = np.mean(data.variables[var][0, :])
+                    else:
+                        continue
+
+                    monthly_avgs.append((case, var, '{:04}'.format(inst), date_str, m))
+
+    monthly_avgs = pd.DataFrame(monthly_avgs, columns=('case', 'variable', 'instance', 'date', 'monthly_mean'))
+    return monthly_avgs

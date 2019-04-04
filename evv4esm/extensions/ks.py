@@ -45,7 +45,6 @@ techniques.
 """
 
 from __future__ import absolute_import, division, print_function, unicode_literals
-import six
 
 import os
 import argparse
@@ -55,7 +54,6 @@ from collections import OrderedDict
     
 import numpy as np
 from scipy import stats
-from netCDF4 import Dataset
 
 import livvkit
 from livvkit.util import elements as el
@@ -227,68 +225,35 @@ def main(args):
         args.case1 = key1
         args.case2 = key2
 
-    averages = LIVVDict()
-    details = LIVVDict()
-    for case, inst_dict in six.iteritems(ens_files):
-        for inst, i_files in six.iteritems(inst_dict):
-            # Get monthly averages from files
-            for file_ in i_files:
-                date_str = e3sm.file_date_str(file_)
-
-                data = None
-                try:
-                    data = Dataset(file_)
-                except OSError as E:
-                    six.raise_from(BaseException('Could not open netCDF dataset: {}'.format(file_)), E)
-
-                for var in data.variables.keys():
-                    if len(data.variables[var].shape) < 2 or var in ['time_bnds', 'date_written', 'time_written']:
-                        continue
-                    elif 'ncol' not in data.variables[var].dimensions:
-                        continue
-                    elif len(data.variables[var].shape) == 3:
-                        averages[case][var]['{:04}'.format(inst)][date_str] = np.mean(data.variables[var][0, :, :])
-                    elif len(data.variables[var].shape) == 2:
-                        averages[case][var]['{:04}'.format(inst)][date_str] = np.mean(data.variables[var][0, :])
-
-        # calculate annual averages from data structure
-        for var, instances in six.iteritems(averages[case]):
-            for inst in instances:
-                months = [instances[inst][date] for date in instances[inst]]
-                averages[case][var][inst]['annual'] = monthly_to_annual_avg(months)
-
-        # array of annual averages for
-        for var in averages[case]:
-            averages[case][var]['annuals'] = np.array(
-                    [averages[case][var][m]['annual'] for m in sorted(six.iterkeys(averages[case][var]))])
+    monthly_avgs = e3sm.gather_monthly_averages(ens_files)
+    annual_avgs = monthly_avgs.groupby(['case', 'variable', 'instance']
+                                       ).monthly_mean.aggregate(monthly_to_annual_avg).reset_index()
 
     # now, we got the data, so let's get some stats
-    var_set1 = set([var for var in averages[args.case1]])
-    var_set2 = set([var for var in averages[args.case2]])
+    var_set1 = set(monthly_avgs[monthly_avgs.case == args.case1].variable.unique())
+    var_set2 = set(monthly_avgs[monthly_avgs.case == args.case2].variable.unique())
     common_vars = list(var_set1 & var_set2)
 
     img_list = []
+    details = LIVVDict()
     for var in sorted(common_vars):
-        details[var]['T test (t, p)'] = stats.ttest_ind(averages[args.case1][var]['annuals'],
-                                                        averages[args.case2][var]['annuals'],
+        annuals_1 = annual_avgs.query('case == @args.case1 & variable == @var').monthly_mean.values
+        annuals_2 = annual_avgs.query('case == @args.case2 & variable == @var').monthly_mean.values
+
+        details[var]['T test (t, p)'] = stats.ttest_ind(annuals_1, annuals_2,
                                                         equal_var=False, nan_policy=str('omit'))
         if np.isnan(details[var]['T test (t, p)']).any() or np.isinf(details[var]['T test (t, p)']).any():
             details[var]['T test (t, p)'] = (None, None)
 
-        details[var]['K-S test (D, p)'] = stats.ks_2samp(averages[args.case1][var]['annuals'],
-                                                         averages[args.case2][var]['annuals'])
+        details[var]['K-S test (D, p)'] = stats.ks_2samp(annuals_1, annuals_2)
 
-        details[var]['mean (case 1, case 2)'] = (np.mean(averages[args.case1][var]['annuals']),
-                                                 np.mean(averages[args.case2][var]['annuals']))
+        details[var]['mean (case 1, case 2)'] = (annuals_1.mean(), annuals_2.mean())
 
-        details[var]['max (case 1, case 2)'] = (np.max(averages[args.case1][var]['annuals']),
-                                                np.max(averages[args.case2][var]['annuals']))
+        details[var]['max (case 1, case 2)'] = (annuals_1.max(), annuals_2.max())
 
-        details[var]['min (case 1, case 2)'] = (np.min(averages[args.case1][var]['annuals']),
-                                                np.min(averages[args.case2][var]['annuals']))
+        details[var]['min (case 1, case 2)'] = (annuals_1.min(), annuals_2.min())
 
-        details[var]['std (case 1, case 2)'] = (np.std(averages[args.case1][var]['annuals']),
-                                                np.std(averages[args.case2][var]['annuals']))
+        details[var]['std (case 1, case 2)'] = (annuals_1.std(), annuals_2.std())
 
         if details[var]['T test (t, p)'][0] is None:
             details[var]['h0'] = '-'
@@ -298,13 +263,14 @@ def main(args):
             details[var]['h0'] = 'accept'
 
         img_file = os.path.relpath(os.path.join(args.img_dir, var + '.png'), os.getcwd())
-        prob_plot(averages[args.case1][var]['annuals'],
-                  averages[args.case2][var]['annuals'],
-                  20, img_file, test_name=args.case1, ref_name=args.case2)
+        prob_plot(annuals_1, annuals_2, 20, img_file, test_name=args.case1, ref_name=args.case2)
         
-        img_desc = 'Mean annual global average of {} for <em>{}</em> is {:.3e} and for <em>{}</em> is {:.3e}'.format(
-                        var, args.case1, details[var]['mean (case 1, case 2)'][0],
-                        args.case2, details[var]['mean (case 1, case 2)'][1])
+        img_desc = 'Mean annual global average of {} for <em>{}</em> is {:.3e} ' \
+                   'and for <em>{}</em> is {:.3e}'.format(var,
+                                                          args.case1,
+                                                          details[var]['mean (case 1, case 2)'][0],
+                                                          args.case2,
+                                                          details[var]['mean (case 1, case 2)'][1])
 
         img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
         img_list.append(el.image(var, img_desc, img_link))
