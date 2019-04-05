@@ -90,12 +90,8 @@ def gather_monthly_averages(ensemble_files):
                         continue
                     elif 'ncol' not in data.variables[var].dimensions:
                         continue
-                    elif len(data.variables[var].shape) == 3:
-                        m = np.mean(data.variables[var][0, :, :])
-                    elif len(data.variables[var].shape) == 2:
-                        m = np.mean(data.variables[var][0, :])
                     else:
-                        continue
+                        m = np.mean(data.variables[var][0, ...])
 
                     monthly_avgs.append((case, var, '{:04}'.format(inst), date_str, m))
 
