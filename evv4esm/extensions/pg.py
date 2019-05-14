@@ -287,8 +287,8 @@ def main(args):
     ax.set_xticklabels(args.variables, rotation=45, ha='right')
     ax.set_ylabel('Temperature RMSE (K)')
 
-    patch_list = [mpatches.Patch(color='C0', alpha=0.5, label='ref.'),
-                  mpatches.Patch(color='C1', alpha=0.5, label='test')]
+    patch_list = [mpatches.Patch(color='C0', alpha=0.5, label='Ref.'),
+                  mpatches.Patch(color='C1', alpha=0.5, label='Test')]
     plt.legend(handles=patch_list)
 
     plt.tight_layout()
@@ -299,7 +299,7 @@ def main(args):
                'time step for the {} simulation (orange) and the {} simulation ' \
                '(blue). The x-axis details the physical parameterizations and/or ' \
                'Fortran code modules executed within this time ' \
-               'step'.format(args.test_name, args.ref_name)
+               'step.'.format(args.test_name, args.ref_name)
     img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
     img_gallery = el.gallery('Perturbation growth', [
         el.image(args.test_case, img_desc, img_link, height=600)
