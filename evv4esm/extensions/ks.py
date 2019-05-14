@@ -35,7 +35,7 @@ state, based on the equality of distribution of each variable's annual global
 average in the standard monthly model output between the two simulations.
 
 The (per variable) null hypothesis uses the non-parametric, two-sample (n and m)
-Kolmogorov-Smirnov test as the univariate test of of equality of distribution of
+Kolmogorov-Smirnov test as the univariate test of equality of distribution of
 global means. The test statistic (t) is the number of variables that reject the
 (per variable) null hypothesis of equality of distribution at a 95% confidence
 level. The (overall) null hypothesis is rejected if t > α, where α is some
