@@ -45,6 +45,7 @@ techniques.
 """
 
 from __future__ import absolute_import, division, print_function, unicode_literals
+import six
 
 import os
 import argparse
@@ -64,6 +65,19 @@ from evv4esm.ensembles import e3sm
 from evv4esm.ensembles.tools import monthly_to_annual_avg, prob_plot
 
 
+def variable_set(name):
+    var_sets = fn.read_json(os.path.join(os.path.dirname(__file__),
+                                         'ks_vars.json'))
+    try:
+        the_set = var_sets[name.lower()]
+        return set(the_set)
+    except KeyError as e:
+        six.raise_from(argparse.ArgumentTypeError(
+                'Unknown variable set! Known sets are {}'.format(
+                        var_sets.keys()
+                )), e)
+
+
 def parse_args(args=None):
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -73,26 +87,30 @@ def parse_args(args=None):
                         help='A JSON config file containing a `ks` dictionary defining ' +
                              'the options. NOTE: command line options will override file options.')
 
-    parser.add_argument('--case1',
+    parser.add_argument('--test-case',
                         default='default',
-                        help='Name of case 1.')
+                        help='Name of the test case.')
 
-    parser.add_argument('--dir1',
+    parser.add_argument('--test-dir',
                         default=os.path.join(os.getcwd(), 'archive'),
-                        help='Location of case 1 files.')
+                        help='Location of the test case run files.')
 
-    parser.add_argument('--case2',
+    parser.add_argument('--ref-case',
                         default='fast',
-                        help='Name of case 2.')
+                        help='Name of the reference case.')
 
-    parser.add_argument('--dir2',
+    parser.add_argument('--ref-dir',
                         default=os.path.join(os.getcwd(), 'archive'),
-                        help='Location of case 2 files.')
+                        help='Location of the reference case run files.')
 
-    # noinspection PyTypeChecker
+    parser.add_argument('--var-set',
+                        default='default', type=variable_set,
+                        help='Name of the variable set to analyze.')
+
     parser.add_argument('--ninst',
                         default=30, type=int,
-                        help='The number of instances in both cases.')
+                        help='The number of instances (should be the same for '
+                             'both cases).')
 
     parser.add_argument('--critical',
                         default=13, type=float,
@@ -162,14 +180,14 @@ def run(name, config):
 
 def case_files(args):
     # ensure unique case names for the dictionary
-    key1 = args.case1
-    key2 = args.case2
-    if args.case1 == args.case2:
+    key1 = args.test_case
+    key2 = args.ref_case
+    if args.test_case == args.ref_case:
         key1 += '1'
         key2 += '2'
 
-    f_sets = {key1: e3sm.component_monthly_files(args.dir1, 'cam', args.ninst),
-              key2: e3sm.component_monthly_files(args.dir2, 'cam', args.ninst)}
+    f_sets = {key1: e3sm.component_monthly_files(args.test_dir, 'cam', args.ninst),
+              key2: e3sm.component_monthly_files(args.ref_dir, 'cam', args.ninst)}
 
     return f_sets, key1, key2
 
@@ -221,24 +239,24 @@ def populate_metadata():
 
 def main(args):
     ens_files, key1, key2 = case_files(args)
-    if args.case1 == args.case2:
-        args.case1 = key1
-        args.case2 = key2
+    if args.test_case == args.ref_case:
+        args.test_case = key1
+        args.ref_case = key2
 
-    monthly_avgs = e3sm.gather_monthly_averages(ens_files)
+    monthly_avgs = e3sm.gather_monthly_averages(ens_files, args.var_set)
     annual_avgs = monthly_avgs.groupby(['case', 'variable', 'instance']
                                        ).monthly_mean.aggregate(monthly_to_annual_avg).reset_index()
 
     # now, we got the data, so let's get some stats
-    var_set1 = set(monthly_avgs[monthly_avgs.case == args.case1].variable.unique())
-    var_set2 = set(monthly_avgs[monthly_avgs.case == args.case2].variable.unique())
-    common_vars = list(var_set1 & var_set2)
+    test_set = set(monthly_avgs[monthly_avgs.case == args.test_case].variable.unique())
+    ref_set = set(monthly_avgs[monthly_avgs.case == args.ref_case].variable.unique())
+    common_vars = list(test_set & ref_set)
 
     img_list = []
     details = LIVVDict()
     for var in sorted(common_vars):
-        annuals_1 = annual_avgs.query('case == @args.case1 & variable == @var').monthly_mean.values
-        annuals_2 = annual_avgs.query('case == @args.case2 & variable == @var').monthly_mean.values
+        annuals_1 = annual_avgs.query('case == @args.test_case & variable == @var').monthly_mean.values
+        annuals_2 = annual_avgs.query('case == @args.ref_case & variable == @var').monthly_mean.values
 
         details[var]['T test (t, p)'] = stats.ttest_ind(annuals_1, annuals_2,
                                                         equal_var=False, nan_policy=str('omit'))
@@ -247,13 +265,13 @@ def main(args):
 
         details[var]['K-S test (D, p)'] = stats.ks_2samp(annuals_1, annuals_2)
 
-        details[var]['mean (case 1, case 2)'] = (annuals_1.mean(), annuals_2.mean())
+        details[var]['mean (test case, ref. case)'] = (annuals_1.mean(), annuals_2.mean())
 
-        details[var]['max (case 1, case 2)'] = (annuals_1.max(), annuals_2.max())
+        details[var]['max (test case, ref. case)'] = (annuals_1.max(), annuals_2.max())
 
-        details[var]['min (case 1, case 2)'] = (annuals_1.min(), annuals_2.min())
+        details[var]['min (test case, ref. case)'] = (annuals_1.min(), annuals_2.min())
 
-        details[var]['std (case 1, case 2)'] = (annuals_1.std(), annuals_2.std())
+        details[var]['std (test case, ref. case)'] = (annuals_1.std(), annuals_2.std())
 
         if details[var]['T test (t, p)'][0] is None:
             details[var]['h0'] = '-'
@@ -263,14 +281,14 @@ def main(args):
             details[var]['h0'] = 'accept'
 
         img_file = os.path.relpath(os.path.join(args.img_dir, var + '.png'), os.getcwd())
-        prob_plot(annuals_1, annuals_2, 20, img_file, test_name=args.case1, ref_name=args.case2)
+        prob_plot(annuals_1, annuals_2, 20, img_file, test_name=args.test_case, ref_name=args.ref_case)
         
         img_desc = 'Mean annual global average of {} for <em>{}</em> is {:.3e} ' \
                    'and for <em>{}</em> is {:.3e}'.format(var,
-                                                          args.case1,
-                                                          details[var]['mean (case 1, case 2)'][0],
-                                                          args.case2,
-                                                          details[var]['mean (case 1, case 2)'][1])
+                                                          args.test_case,
+                                                          details[var]['mean (test case, ref. case)'][0],
+                                                          args.ref_case,
+                                                          details[var]['mean (test case, ref. case)'][1])
 
         img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
         img_list.append(el.image(var, img_desc, img_link))

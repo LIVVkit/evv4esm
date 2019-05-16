@@ -71,7 +71,7 @@ def component_monthly_files(dir_, component, ninst):
     return instance_files
 
 
-def gather_monthly_averages(ensemble_files):
+def gather_monthly_averages(ensemble_files, variable_set=None):
     monthly_avgs = []
     for case, inst_dict in six.iteritems(ensemble_files):
         for inst, i_files in six.iteritems(inst_dict):
@@ -82,10 +82,14 @@ def gather_monthly_averages(ensemble_files):
                 data = None
                 try:
                     data = Dataset(file_)
+                    if variable_set is None:
+                        variable_set = set(data.variables.keys())
                 except OSError as E:
                     six.raise_from(BaseException('Could not open netCDF dataset: {}'.format(file_)), E)
 
                 for var in data.variables.keys():
+                    if var not in variable_set:
+                        continue
                     if len(data.variables[var].shape) < 2 or var in ['time_bnds', 'date_written', 'time_written']:
                         continue
                     elif 'ncol' not in data.variables[var].dimensions:
