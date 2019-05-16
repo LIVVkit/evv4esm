@@ -362,7 +362,8 @@ def run(name, config, print_details=False):
               'Title': 'Results',
               'Headers': ['h0', 'T test (t, p)'],
               'Data': {'h0': details['h0'],
-                       'T test (t, p)': details['T test (t, p)']}
+                       'T test (t, p)': details['T test (t, p)'],
+                       'Ensembles': 'identical' if details['h0'] == 'accept' else 'distinct'}
               }
 
     element_list = [tbl_el, img_gal]
