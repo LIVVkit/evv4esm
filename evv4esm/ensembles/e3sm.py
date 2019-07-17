@@ -50,8 +50,14 @@ def component_file_instance(component, case_file):
     return int(result.replace('cam_', ''))
 
 
-def file_date_str(case_file):
-    search_regex = r'h0\.[0-9]+-[0-9]+.nc'
+def file_date_str(case_file, style='short'):
+    if style == 'full':
+        search_regex = r'h0\.[0-9]+-[0-9]+-[0-9]+-[0-9]+.nc'
+    elif style == 'short':
+        search_regex = r'h0\.[0-9]+-[0-9]+.nc'
+    else:
+        # FIXME: log warning here
+        search_regex = r'h0\.[0-9]+-[0-9]+.nc'
     result = re.search(search_regex, case_file).group(0)
     return result.replace('h0.', '').replace('.nc', '')
 
