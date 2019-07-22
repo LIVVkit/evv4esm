@@ -43,11 +43,13 @@ from pprint import pprint
 
 import numpy as np
 import pandas as pd
+from scipy.stats import ttest_1samp
 from netCDF4 import Dataset
 
 import livvkit
 from livvkit.util import elements as el
 from livvkit.util import functions as fn
+from livvkit.util.LIVVDict import LIVVDict
 
 from evv4esm.ensembles import e3sm
 
@@ -96,18 +98,28 @@ def run(name, config, print_details=False):
     fn.mkdir_p(test_args.img_dir)
     details, img_gal = main(test_args)
 
-    # FIXME: T test???
-    tbl_el = {'Type': 'Table',
-              'Title': 'Results',
-              'Headers': ['h0', 'T test (t, p)'],
-              'Data': {'h0': details['h0'],
-                       'T test (t, p)': details['T test (t, p)'],
-                       'Ensembles': 'identical' if details['h0'] == 'accept' else 'distinct'}
-              }
+    if print_details:
+        _print_details(details)
 
-    element_list = [tbl_el, img_gal]
+    land_tbl_el = {'Type': 'V-H Table',
+                   'Title': 'Validation',
+                   'TableTitle': 'Analyzed variables',
+                   'Headers': test_args.variables,
+                   'Data': {'': details['land']}
+                   }
+    ocean_tbl_el = {'Type': 'V-H Table',
+                    'Title': 'Validation',
+                    'TableTitle': 'Analyzed variables',
+                    'Headers': test_args.variables,
+                    'Data': {'': details['ocean']}
+                    }
+    tab_list = [el.tab('Gallery', element_list=[img_gal]),
+                el.tab('Land_table', element_list=[land_tbl_el]),
+                el.tab('Ocean_table', element_list=[ocean_tbl_el])]
 
-    page = el.page(name, __doc__, element_list=element_list)
+    page = el.page(name, __doc__, tab_list=tab_list)
+    page['domains'] = details['domains'].to_dict()
+    page['overall'] = details['overall']
 
     return page
 
@@ -135,7 +147,7 @@ def main(args):
     # But, building a pandas dataframe row by row is sloooow, so append a list of list and convert
     data = []
     for instance, truth_files in truth_ens.items():
-        times = [e3sm.file_date_str(ff, style='full').split('-')[-1] for ff in truth_files]
+        times = [int(e3sm.file_date_str(ff, style='full').split('-')[-1]) for ff in truth_files]
         for tt, time in enumerate(times):
             with Dataset(truth_ens[instance][tt]) as truth, \
                     Dataset(ref_ens[instance][tt]) as ref, \
@@ -188,7 +200,46 @@ def main(args):
     tsc_df = pd.DataFrame(data, columns=['case', 'instance', 'seconds', 'variable',
                                          'l2_global', 'l2_land', 'l2_ocean'])
 
-    details = OrderedDict()
+    # NOTE: This mess is because we want to "normalize" both the test l2 and
+    # reference l2 by the mean _reference_ l2 for each instance and variable.
+    tsc_df[['norm_l2_global', 'norm_l2_land', 'norm_l2_ocean']] = \
+        tsc_df.groupby(['instance', 'variable']).apply(
+            lambda g: g[['l2_global', 'l2_land', 'l2_ocean']]
+                      / g[g['case'] == args.ref_case][['l2_global', 'l2_land', 'l2_ocean']].mean())
+
+    # NOTE: This is what we're actually going to apply the one-sided t test to
+    test_columns = ['l2_global', 'l2_land', 'l2_ocean', 'norm_l2_global', 'norm_l2_land', 'norm_l2_ocean']
+    delta_rmsd = tsc_df[tsc_df['case'] == args.test_case].copy()
+    delta_rmsd[test_columns] = delta_rmsd[test_columns] - tsc_df[tsc_df['case'] == args.ref_case][test_columns].values
+    delta_rmsd.rename(columns={c: 'delta_' + c for c in test_columns}, inplace=True)
+
+    testee = delta_rmsd.query(' seconds >= @args.time_slice[0] & seconds <= @args.time_slice[1]')
+    ttest = testee.groupby(['seconds', 'variable']).agg(ttest_1samp, popmean=0.0).drop(columns='instance')
+
+    # H0: enemble_mean_ΔRMSD_{t,var} is (statistically) zero and therefore, the simulations are identical
+    null_hypothesis = ttest.applymap(lambda x: 'Reject' if x[1] < P_THRESHOLD else 'Accept')
+
+    domains = null_hypothesis.applymap(lambda x: x == 'Reject').any().transform(lambda x: 'Fail' if x is True else 'Pass')
+    overall = 'Fail' if domains.apply(lambda x: x == 'Fail').any() else 'Pass'
+
+    ttest.reset_index(inplace=True)
+    null_hypothesis.reset_index(inplace=True)
+
+    land_data = LIVVDict()
+    ocean_data = LIVVDict()
+    for sec in ttest['seconds'].unique():
+        for var in ttest['variable'].unique():
+            t_data = ttest.loc[(ttest['seconds'] == sec) & (ttest['variable'] == var)]
+            h0_data = null_hypothesis.loc[(null_hypothesis['seconds'] == sec) & (null_hypothesis['variable'] == var)]
+            land_data[sec][var] = 'h0: {}, T test (t, p): ({}, {})'.format(
+                    h0_data['delta_l2_land'].values[0], *t_data['delta_l2_land'].values[0])
+            ocean_data[sec][var] = 'h0: {}, T test (t, p): ({}, {})'.format(
+                    h0_data['delta_l2_ocean'].values[0], *t_data['delta_l2_ocean'].values[0])
+
+
+    details = {'ocean': ocean_data, 'land': land_data,
+               'domains': domains, 'overall': overall}
+
     img_gallery = el.gallery('Time step convergence', [])
 
     return details, img_gallery
@@ -216,18 +267,33 @@ def _print_details(details):
 
 
 def print_summary(summary):
-    raise NotImplementedError
+    print('    Time step convergence test: {}'.format(summary['']['Case']))
+    print('      Global: {}'.format(summary['']['Global']))
+    print('      Land: {}'.format(summary['']['Land']))
+    print('      Ocean: {}'.format(summary['']['Ocean']))
+    print('      Ensembles: {}\n'.format(summary['']['Ensembles']))
 
 
 def summarize_result(results_page):
-    raise NotImplementedError
+    summary = {'Case': results_page['Title']}
+    summary['Global'] = results_page['domains']['delta_l2_global']
+    summary['Land'] = results_page['domains']['delta_l2_land']
+    summary['Ocean'] = results_page['domains']['delta_l2_ocean']
+    summary['Ensembles'] = 'identical' if results_page['overall'] == 'Pass' else 'distinct'
+    return {'': summary}
 
 
 def populate_metadata():
     """
-    Generates the metadata needed for the output summary page
+    Generates the metadata responsible for telling the summary what
+    is done by this module's run method
     """
-    raise NotImplementedError
+
+    metadata = {'Type': 'ValSummary',
+                'Title': 'Validation',
+                'TableTitle': 'Time step convergence test',
+                'Headers': ['Global', 'Land', 'Ocean', 'Ensembles']}
+    return metadata
 
 
 if __name__ == '__main__':
