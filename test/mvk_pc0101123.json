@@ -1,0 +1,12 @@
+{
+  "mvk_test_local": {
+    "module": "/home/fjk/Documents/Code/EVV/evv/evv4esm/extensions/ks.py",
+    "test-case": "Test",
+    "test-dir": "/home/fjk/Documents/Data/E3SM/MVK/MVK_PL.ne4_ne4.FC5AV1C-04P2.titan_pgi.G.20190212_103503_yp1abl/run",
+    "ref-case": "Reference",
+    "ref-dir": "/home/fjk/Documents/Data/E3SM/MVK/MVK_PL.ne4_ne4.FC5AV1C-04P2.titan_pgi.G.20190212_103503_yp1abl/run",
+    "var-set": "default",
+    "ninst": 20,
+    "critical": 13
+  }
+}
