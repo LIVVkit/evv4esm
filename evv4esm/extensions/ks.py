@@ -232,7 +232,7 @@ def populate_metadata():
     
     metadata = {'Type': 'ValSummary',
                 'Title': 'Validation',
-                'TableTitle': 'Kolmogorov-Smirnov',
+                'TableTitle': 'Kolmogorov-Smirnov test',
                 'Headers': ['Variables Analyzed', 'Rejecting', 'Critical Value', 'Ensembles']}
     return metadata
     
