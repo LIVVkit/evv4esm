@@ -1,5 +1,7 @@
 #### joe made this: https://goel.io/joe
 
+test/*_test
+
 #####=== Vim ===#####
 [._]*.s[a-w][a-z]
 [._]s[a-w][a-z]
