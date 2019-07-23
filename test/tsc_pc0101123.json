@@ -2,7 +2,7 @@
   "tsc_test_local": {
     "module": "/home/fjk/Documents/Code/EVV/evv/evv4esm/extensions/tsc.py",
     "test-case": "Test",
-    "test-dir": "/home/fjk/Documents/Data/E3SM/TSC/TSC.ne4_ne4.FC5AV1C-L.cori-knl_intel.C.20190710_162833_svtegk/run",
+    "test-dir": "/home/fjk/Documents/Data/E3SM/TSC/TSC.ne4_ne4.FC5AV1C-L.cori-knl_intel.C.20190722_145157_8lmk5y/run",
     "ref-case": "Reference",
     "ref-dir": "/home/fjk/Documents/Data/E3SM/TSC/TSC.ne4_ne4.FC5AV1C-L.cori-knl_intel.G.20190710_143749_i2r1c6/run",
     "time-slice": [300, 600],
