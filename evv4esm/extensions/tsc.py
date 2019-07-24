@@ -213,7 +213,7 @@ def main(args):
     delta_rmsd[test_columns] = delta_rmsd[test_columns] - tsc_df[tsc_df['case'] == args.ref_case][test_columns].values
     delta_rmsd.rename(columns={c: 'delta_' + c for c in test_columns}, inplace=True)
 
-    testee = delta_rmsd.query(' seconds >= @args.time_slice[0] & seconds <= @args.time_slice[1]')
+    testee = delta_rmsd.query(' seconds >= @args.time_slice[0] & seconds <= @args.time_slice[-1]')
     ttest = testee.groupby(['seconds', 'variable']).agg(ttest_1samp, popmean=0.0).drop(columns='instance')
 
     # H0: enemble_mean_ΔRMSD_{t,var} is (statistically) zero and therefore, the simulations are identical
@@ -246,9 +246,7 @@ def main(args):
 
     img_list = [plot_failing_variables(args, null_hypothesis, fail_timeline_img),
                 plot_pmin(args, ttest, pmin_timeline_img)]
-    img_list.extend(plot_delta_rmsd(args,
-                                    delta_rmsd[(delta_rmsd['seconds'] == args.time_slice[0])
-                                               | (delta_rmsd['seconds'] == args.time_slice[-1])],
+    img_list.extend(plot_delta_rmsd(args, delta_rmsd[delta_rmsd['seconds'].isin(args.inspect_times)],
                                     null_hypothesis, rmsd_img_format))
 
     img_gallery = el.gallery('Time step convergence', img_list)
