@@ -43,6 +43,8 @@ from pprint import pprint
 
 import numpy as np
 import pandas as pd
+import matplotlib.ticker as tkr
+import matplotlib.pyplot as plt
 from scipy.stats import ttest_1samp
 from netCDF4 import Dataset
 
@@ -53,10 +55,8 @@ from livvkit.util.LIVVDict import LIVVDict
 
 from evv4esm.ensembles import e3sm
 
-
-# FIXME: CONSTANTS that probably aren't needed
-T_THRESHOLD = 3.106
-P_THRESHOLD = 0.005
+PF_COLORS = {'Pass': 'cornflowerblue', 'Accept': 'cornflowerblue',
+             'Fail': 'maroon', 'Reject': 'maroon'}
 
 
 def parse_args(args=None):
@@ -217,9 +217,10 @@ def main(args):
     ttest = testee.groupby(['seconds', 'variable']).agg(ttest_1samp, popmean=0.0).drop(columns='instance')
 
     # H0: enemble_mean_ΔRMSD_{t,var} is (statistically) zero and therefore, the simulations are identical
-    null_hypothesis = ttest.applymap(lambda x: 'Reject' if x[1] < P_THRESHOLD else 'Accept')
+    null_hypothesis = ttest.applymap(lambda x: 'Reject' if x[1] < args.p_threshold else 'Accept')
 
-    domains = null_hypothesis.applymap(lambda x: x == 'Reject').any().transform(lambda x: 'Fail' if x is True else 'Pass')
+    domains = null_hypothesis.applymap(lambda x: x == 'Reject').any().transform(
+            lambda x: 'Fail' if x is True else 'Pass')
     overall = 'Fail' if domains.apply(lambda x: x == 'Fail').any() else 'Pass'
 
     ttest.reset_index(inplace=True)
@@ -236,11 +237,21 @@ def main(args):
             ocean_data[sec][var] = 'h0: {}, T test (t, p): ({}, {})'.format(
                     h0_data['delta_l2_ocean'].values[0], *t_data['delta_l2_ocean'].values[0])
 
-
     details = {'ocean': ocean_data, 'land': land_data,
                'domains': domains, 'overall': overall}
 
-    img_gallery = el.gallery('Time step convergence', [])
+    fail_timeline_img = os.path.relpath(os.path.join(args.img_dir, 'failing_timeline.png'), os.getcwd())
+    pmin_timeline_img = os.path.relpath(os.path.join(args.img_dir, 'pmin_timeline.png'), os.getcwd())
+    rmsd_img_format = os.path.relpath(os.path.join(args.img_dir, 'rmsd_{}s.png'), os.getcwd())
+
+    img_list = [plot_failing_variables(args, null_hypothesis, fail_timeline_img),
+                plot_pmin(args, ttest, pmin_timeline_img)]
+    img_list.extend(plot_delta_rmsd(args,
+                                    delta_rmsd[(delta_rmsd['seconds'] == args.time_slice[0])
+                                               | (delta_rmsd['seconds'] == args.time_slice[-1])],
+                                    null_hypothesis, rmsd_img_format))
+
+    img_gallery = el.gallery('Time step convergence', img_list)
 
     return details, img_gallery
 
@@ -256,6 +267,129 @@ def pressure_layer_thickness(dataset):
 
     dp = np.expand_dims(da * p0, 1) + (np.expand_dims(db, 1) * np.expand_dims(ps, 0))
     return dp, ps
+
+
+def plot_failing_variables(args, null_hypothesis, img_file):
+    null_hypothesis[['n_fail_land', 'n_fail_ocean']] = \
+        null_hypothesis[['delta_l2_land', 'delta_l2_ocean']].transform(lambda x: x == 'Reject').astype('int')
+
+    pdata = null_hypothesis[['seconds', 'n_fail_land', 'n_fail_ocean']].groupby('seconds').sum().sum(axis=1)
+
+    fig, ax = plt.subplots(figsize=(10, 8))
+    plt.rc('font', family='serif')
+
+    pdata.plot(linestyle='-', marker='o', color='maroon')
+    ax.set_ybound(0, 20)
+    ax.set_yticks(np.arange(0, 24, 4))
+    ax.set_yticks(np.arange(0, 21, 1), minor=True)
+
+    ax.set_ylabel('Number of failing variables')
+    ax.set_xlabel('Integration time (s)')
+
+    plt.tight_layout()
+    plt.savefig(img_file, bbox_inches='tight')
+    plt.close(fig)
+
+    img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
+    img = el.image(args.test_case, 'Timeline of failing variables', img_link, height=300)
+    return img
+
+
+def plot_pmin(args, ttest, img_file):
+    ttest[['p_land', 'p_ocean']] = ttest[['delta_l2_land', 'delta_l2_ocean']].applymap(lambda x: x[1])
+    pdata = ttest[['seconds', 'p_land', 'p_ocean']].groupby(['seconds']).min().min(axis=1) * 100  # to %
+
+    fig, ax = plt.subplots(figsize=(10, 8))
+    plt.rc('font', family='serif')
+
+    fails = pdata[pdata.lt(args.p_threshold * 100)]
+    passes = pdata[pdata.ge(args.p_threshold * 100)]
+
+    if passes.empty:
+        fails.plot(logy=True, linestyle='-', marker='o', color='maroon')
+    elif fails.empty:
+        passes.plot(logy=True, linestyle='-', marker='o', color='cornflowerblue')
+    else:
+        first_fail = fails.index[0]
+        pdata.loc[:first_fail].plot(logy=True, linestyle='-', marker='o', color='cornflowerblue')
+        pdata.loc[first_fail:].plot(logy=True, linestyle='-', marker='o', color='maroon')
+
+    ax.plot(args.time_slice, [0.5, 0.5], 'k--')
+    ax.text(np.mean(args.time_slice), 10 ** -1, 'Fail', fontsize=15, color='maroon',
+            horizontalalignment='center')
+    ax.text(np.mean(args.time_slice), 10 ** 0, 'Pass', fontsize=15, color='cornflowerblue',
+            horizontalalignment='center')
+
+    ax.set_ybound(100, 10 ** -15)
+    locmaj = tkr.LogLocator(numticks=18)
+    ax.yaxis.set_major_locator(locmaj)
+    locmin = tkr.LogLocator(subs=(0.2, 0.4, 0.6, 0.8), numticks=18)
+    ax.yaxis.set_minor_locator(locmin)
+    ax.yaxis.set_minor_formatter(tkr.NullFormatter())
+    ax.set_ylabel('P_{min} (%)')
+    ax.set_xlabel('Integration time (s)')
+
+    plt.tight_layout()
+    plt.savefig(img_file, bbox_inches='tight')
+    plt.close(fig)
+
+    img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
+    img = el.image(args.test_case, 'Timeline of P_{min}', img_link, height=300)
+    return img
+
+
+def plot_delta_rmsd(args, delta_rmsd, null_hypothesis, img_file_format):
+    img_list = []
+    columns = ['instance', 'variable', 'delta_norm_l2_land', 'delta_norm_l2_ocean']
+    for time in delta_rmsd['seconds'].unique():
+        img_file = img_file_format.format(time)
+        pdata = delta_rmsd[delta_rmsd['seconds'] == time][columns]
+
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 8))
+        plt.rc('font', family='serif')
+
+        bp1 = pdata.boxplot(column='delta_norm_l2_land', by='variable', ax=ax1, vert=False, grid=False,
+                            patch_artist=True, return_type='dict')
+        bp2 = pdata.boxplot(column='delta_norm_l2_ocean', by='variable', ax=ax2, vert=False, grid=False,
+                            patch_artist=True, return_type='dict')
+
+        for box1, box2, var in zip(bp1['delta_norm_l2_land']['boxes'],
+                                   bp2['delta_norm_l2_ocean']['boxes'],
+                                   list(ax1.get_yticklabels())):
+
+            land_var_color = PF_COLORS[
+                null_hypothesis[(null_hypothesis['seconds'] == time)
+                                & (null_hypothesis['variable'] == var.get_text())]['delta_l2_land'].values[0]]
+            ocean_var_color = PF_COLORS[
+                null_hypothesis[(null_hypothesis['seconds'] == time)
+                                & (null_hypothesis['variable'] == var.get_text())]['delta_l2_ocean'].values[0]]
+
+            box1.set_color(land_var_color)
+            box1.set_alpha(0.5)
+
+            box2.set_color(ocean_var_color)
+            box2.set_alpha(0.5)
+
+        for artist in ['fliers', 'medians', 'means', 'whiskers', 'caps']:
+            for a1, a2 in zip(bp1['delta_norm_l2_land'][artist],
+                              bp2['delta_norm_l2_ocean'][artist]):
+                a1.set_color('black')
+                a2.set_color('black')
+
+        st = fig.suptitle("Ensemble ΔRMSD at t={}s".format(time), size=16)
+
+        ax1.set_xlabel('Normalized ensemble mean ΔRMSD')
+        ax1.set_title('Land')
+
+        ax2.set_xlabel('Normalized ensemble mean ΔRMSD')
+        ax2.set_title('Ocean')
+
+        plt.savefig(img_file, bbox_extra_artists=[st], bbox_inches='tight')
+        plt.close(fig)
+
+        img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
+        img_list.append(el.image(args.test_case, 'Timeline of P_{min}', img_link, height=300))
+    return img_list
 
 
 def _print_details(details):
@@ -275,11 +409,11 @@ def print_summary(summary):
 
 
 def summarize_result(results_page):
-    summary = {'Case': results_page['Title']}
-    summary['Global'] = results_page['domains']['delta_l2_global']
-    summary['Land'] = results_page['domains']['delta_l2_land']
-    summary['Ocean'] = results_page['domains']['delta_l2_ocean']
-    summary['Ensembles'] = 'identical' if results_page['overall'] == 'Pass' else 'distinct'
+    summary = {'Case': results_page['Title'],
+               'Global': results_page['domains']['delta_l2_global'],
+               'Land': results_page['domains']['delta_l2_land'],
+               'Ocean': results_page['domains']['delta_l2_ocean'],
+               'Ensembles': 'identical' if results_page['overall'] == 'Pass' else 'distinct'}
     return {'': summary}
 
 
