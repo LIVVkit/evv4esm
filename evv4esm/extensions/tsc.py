@@ -61,6 +61,7 @@ PF_COLORS = {'Pass': 'cornflowerblue', 'Accept': 'cornflowerblue',
 L_PF_COLORS = {'Pass': 'lightskyblue', 'Accept': 'lightskyblue', 'cornflowerblue': 'lightskyblue',
                'Fail': 'lightcoral', 'Reject': 'lightcoral', 'maroon': 'lightcoral'}
 
+
 def parse_args(args=None):
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -208,7 +209,7 @@ def main(args):
     ref_columns = ['ref_' + t for t in test_columns]
     delta_rmsd = tsc_df[tsc_df['case'] == args.ref_case].copy()
     delta_rmsd[delta_columns] = tsc_df[tsc_df['case'] == args.test_case][test_columns].values \
-                                 - delta_rmsd[test_columns]
+                                - delta_rmsd[test_columns]
     delta_rmsd.rename(columns={t: r for t, r in zip(test_columns, ref_columns)}, inplace=True)
 
     # NOTE: This mess is because we want to "normalize" delta l2 by the mean
@@ -296,8 +297,10 @@ def plot_failing_variables(args, null_hypothesis, img_file):
     plt.savefig(img_file, bbox_inches='tight')
     plt.close(fig)
 
+    img_caption = 'The number of failing variables across both domains (land and ' \
+                  'ocean) as a function of model integration time.'
     img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
-    img = el.image(args.test_case, 'Timeline of failing variables', img_link, height=300)
+    img = el.image('Timeline of failing variables', img_caption, img_link, height=300)
     return img
 
 
@@ -339,8 +342,13 @@ def plot_pmin(args, ttest, img_file):
     plt.savefig(img_file, bbox_inches='tight')
     plt.close(fig)
 
+    img_caption = 'The minimum P value of all variables in both domains (land and ' \
+                  'ocean) as a function of model integration time plotted with ' \
+                  'a logarithmic y-scale. The dashed grey line indicates the' \
+                  'threshold for assigning an overall "pass" or "fail" to a test' \
+                  'ensemble, see Wan et al. (2017) eqn. 8.'
     img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
-    img = el.image(args.test_case, 'Timeline of P_{min}', img_link, height=300)
+    img = el.image('Timeline of P_{min}', img_caption, img_link, height=300)
     return img
 
 
@@ -411,7 +419,8 @@ def boxplot_delta_rmsd(args, delta_rmsd, null_hypothesis, img_file_format):
                       'according to the criterion described in ' \
                       'Wan et al. (2017), eq. 6.'.format(time)
         img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
-        img_list.append(el.image('Boxplot of normalized ensemble ΔRMSD at {}s'.format(time), img_caption, img_link))
+        img_list.append(el.image('Boxplot of normalized ensemble ΔRMSD at {}s'.format(time),
+                                 img_caption, img_link, height=300))
     return img_list
 
 
@@ -521,7 +530,8 @@ def errorbars_delta_rmsd(args, delta_rmsd, null_hypothesis, img_file_format):
                       'according to the criterion described in ' \
                       'Wan et al. (2017), eq. 6.'.format(time, args.p_threshold * 100)
         img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
-        img_list.append(el.image('Distribution of the ensemble ΔRMSD at {}s'.format(time), img_caption, img_link))
+        img_list.append(el.image('Distribution of the ensemble ΔRMSD at {}s'.format(time),
+                                 img_caption, img_link, height=300))
     return img_list
 
 
