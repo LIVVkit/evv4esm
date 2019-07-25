@@ -55,7 +55,6 @@ import matplotlib.patches as mpatches
 
 from scipy import stats
 from netCDF4 import Dataset
-from sklearn.metrics import mean_squared_error
 
 import livvkit
 from livvkit.util import elements as el
@@ -130,11 +129,7 @@ def rmse_writer(file_name, rmse, perturbation_names, perturbation_variables, ini
 
         # NOTE: Assignment to netcdf4 variable length string array can be done
         #       via numpy arrays, or in a for loop using integer indices
-        # FIXME: Pycharm's being weeeird.
-        # noinspection PyUnresolvedReferences
         nc_perturbation[:] = np.array(perturbation_names)
-        # FIXME: Pycharm's being weeeird.
-        # noinspection PyUnresolvedReferences
         nc_variables[:] = np.array(perturbation_variables)
         nc_rmse[:] = rmse[:]
 
@@ -171,8 +166,6 @@ def variables_rmse(ifile_test, ifile_cntl, var_list, var_pefix=''):
         lat = ftest.variables['lat']
         lon = ftest.variables['lon']
 
-        # FIXME: Pycharm's being weeeird.
-        # noinspection PyUnresolvedReferences
         rmse = pd.DataFrame(columns=('RMSE', 'max diff', 'i', 'j', 'control', 'test', 'lat', 'lon'), index=var_list)
 
         # reshape for RMSE
@@ -189,11 +182,8 @@ def variables_rmse(ifile_test, ifile_cntl, var_list, var_pefix=''):
                 vtest = ftest.variables[var.strip()][0, ...]  # first dimension is time (=0)
                 vcntl = fcntl.variables[var.strip()][0, ...]  # first dimension is time (=0)
 
-                vrmse = math.sqrt(mean_squared_error(
-                        vtest.reshape((nx, ny*nz)), vcntl.reshape((nx, ny*nz))))
-                vrmse /= np.mean(vcntl)
+                vrmse = math.sqrt(((vtest - vcntl)**2).mean()) / np.mean(vcntl)
 
-                # NEED to work on formatting this....
                 diff = abs(vtest[...] - vcntl[...])
                 ind_max = np.unravel_index(diff.argmax(), diff.shape)
 
@@ -219,8 +209,6 @@ def main(args):
     # for test cases (new environment etc.)
     # logger.debug("PGN_INFO: Test case comparison...")
 
-    # FIXME: Pycharm's being weeeird.
-    # noinspection PyUnresolvedReferences
     cond_rmse = {}
     for icond in range(args.ninit):
         prt_rmse = {}
@@ -245,8 +233,6 @@ def main(args):
     rmse = pd.concat(cond_rmse)
     comp_rmse = np.reshape(rmse.RMSE.values, (args.ninit, nprt-1, nvar))
 
-    # FIXME: Pycharms is being weeeird
-    # noinspection PyTypeChecker
     rmse_writer(os.path.join(args.test_dir, 'comp_cld.nc'),
                 comp_rmse, args.perturbations.keys(), args.variables, args.init_file_template)
 
