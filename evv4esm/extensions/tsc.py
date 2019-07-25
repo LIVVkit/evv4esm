@@ -45,7 +45,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.ticker as tkr
 import matplotlib.pyplot as plt
-from scipy.stats import ttest_1samp
+from scipy.stats import ttest_1samp, t
 from netCDF4 import Dataset
 
 import livvkit
@@ -58,6 +58,8 @@ from evv4esm.ensembles import e3sm
 PF_COLORS = {'Pass': 'cornflowerblue', 'Accept': 'cornflowerblue',
              'Fail': 'maroon', 'Reject': 'maroon'}
 
+L_PF_COLORS = {'Pass': 'lightskyblue', 'Accept': 'lightskyblue', 'cornflowerblue': 'lightskyblue',
+               'Fail': 'lightcoral', 'Reject': 'lightcoral', 'maroon': 'lightcoral'}
 
 def parse_args(args=None):
     parser = argparse.ArgumentParser(description=__doc__,
@@ -200,18 +202,20 @@ def main(args):
     tsc_df = pd.DataFrame(data, columns=['case', 'instance', 'seconds', 'variable',
                                          'l2_global', 'l2_land', 'l2_ocean'])
 
-    # NOTE: This mess is because we want to "normalize" both the test l2 and
-    # reference l2 by the mean _reference_ l2 for each instance and variable.
-    tsc_df[['norm_l2_global', 'norm_l2_land', 'norm_l2_ocean']] = \
-        tsc_df.groupby(['instance', 'variable']).apply(
-            lambda g: g[['l2_global', 'l2_land', 'l2_ocean']]
-                      / g[g['case'] == args.ref_case][['l2_global', 'l2_land', 'l2_ocean']].mean())
-
     # NOTE: This is what we're actually going to apply the one-sided t test to
-    test_columns = ['l2_global', 'l2_land', 'l2_ocean', 'norm_l2_global', 'norm_l2_land', 'norm_l2_ocean']
-    delta_rmsd = tsc_df[tsc_df['case'] == args.test_case].copy()
-    delta_rmsd[test_columns] = delta_rmsd[test_columns] - tsc_df[tsc_df['case'] == args.ref_case][test_columns].values
-    delta_rmsd.rename(columns={c: 'delta_' + c for c in test_columns}, inplace=True)
+    test_columns = ['l2_global', 'l2_land', 'l2_ocean']
+    delta_columns = ['delta_' + t for t in test_columns]
+    ref_columns = ['ref_' + t for t in test_columns]
+    delta_rmsd = tsc_df[tsc_df['case'] == args.ref_case].copy()
+    delta_rmsd[delta_columns] = tsc_df[tsc_df['case'] == args.test_case][test_columns].values \
+                                 - delta_rmsd[test_columns]
+    delta_rmsd.rename(columns={t: r for t, r in zip(test_columns, ref_columns)}, inplace=True)
+
+    # NOTE: This mess is because we want to "normalize" delta l2 by the mean
+    # _reference_ l2 for each instance and variable.
+    delta_rmsd[['norm_' + d for d in delta_columns]] = \
+        delta_rmsd.groupby(['instance', 'variable']).apply(
+            lambda g: g[delta_columns] / g[ref_columns].mean().values)
 
     testee = delta_rmsd.query(' seconds >= @args.time_slice[0] & seconds <= @args.time_slice[-1]')
     ttest = testee.groupby(['seconds', 'variable']).agg(ttest_1samp, popmean=0.0).drop(columns='instance')
@@ -242,13 +246,17 @@ def main(args):
 
     fail_timeline_img = os.path.relpath(os.path.join(args.img_dir, 'failing_timeline.png'), os.getcwd())
     pmin_timeline_img = os.path.relpath(os.path.join(args.img_dir, 'pmin_timeline.png'), os.getcwd())
-    rmsd_img_format = os.path.relpath(os.path.join(args.img_dir, 'rmsd_{}s.png'), os.getcwd())
+    rmsd_img_format = os.path.relpath(os.path.join(args.img_dir, '{}_rmsd_{{}}s.png'), os.getcwd())
 
     img_list = [plot_failing_variables(args, null_hypothesis, fail_timeline_img),
                 plot_pmin(args, ttest, pmin_timeline_img)]
-    img_list.extend(plot_delta_rmsd(args, delta_rmsd[delta_rmsd['seconds'].isin(args.inspect_times)],
-                                    null_hypothesis, rmsd_img_format))
+    e_img_list = errorbars_delta_rmsd(args, delta_rmsd[delta_rmsd['seconds'].isin(args.inspect_times)],
+                                      null_hypothesis, rmsd_img_format.format('distribution'))
 
+    b_img_list = boxplot_delta_rmsd(args, delta_rmsd[delta_rmsd['seconds'].isin(args.inspect_times)],
+                                    null_hypothesis, rmsd_img_format.format('boxplot'))
+
+    img_list.extend([img for pair in zip(e_img_list, b_img_list) for img in pair])
     img_gallery = el.gallery('Time step convergence', img_list)
 
     return details, img_gallery
@@ -336,57 +344,184 @@ def plot_pmin(args, ttest, img_file):
     return img
 
 
-def plot_delta_rmsd(args, delta_rmsd, null_hypothesis, img_file_format):
+def boxplot_delta_rmsd(args, delta_rmsd, null_hypothesis, img_file_format):
     img_list = []
-    columns = ['instance', 'variable', 'delta_norm_l2_land', 'delta_norm_l2_ocean']
+    columns = ['instance', 'variable', 'norm_delta_l2_land', 'norm_delta_l2_ocean']
     for time in delta_rmsd['seconds'].unique():
         img_file = img_file_format.format(time)
         pdata = delta_rmsd[delta_rmsd['seconds'] == time][columns]
 
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 8))
+        fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(10, 8), sharex='all')
         plt.rc('font', family='serif')
 
-        bp1 = pdata.boxplot(column='delta_norm_l2_land', by='variable', ax=ax1, vert=False, grid=False,
-                            patch_artist=True, return_type='dict')
-        bp2 = pdata.boxplot(column='delta_norm_l2_ocean', by='variable', ax=ax2, vert=False, grid=False,
-                            patch_artist=True, return_type='dict')
+        bp1 = pdata.boxplot(column='norm_delta_l2_land', by='variable', ax=ax1, vert=False, grid=False,
+                            patch_artist=True, return_type='dict', showmeans=True,
+                            meanprops={'markerfacecolor': 'black',
+                                       'markeredgecolor': 'black',
+                                       'marker': '.'})
+        bp2 = pdata.boxplot(column='norm_delta_l2_ocean', by='variable', ax=ax2, vert=False, grid=False,
+                            patch_artist=True, return_type='dict', showmeans=True,
+                            meanprops={'markerfacecolor': 'black',
+                                       'markeredgecolor': 'black',
+                                       'marker': '.'})
 
-        for box1, box2, var in zip(bp1['delta_norm_l2_land']['boxes'],
-                                   bp2['delta_norm_l2_ocean']['boxes'],
-                                   list(ax1.get_yticklabels())):
+        for box1, box2, var1, var2 in zip(bp1['norm_delta_l2_land']['boxes'],
+                                          bp2['norm_delta_l2_ocean']['boxes'],
+                                          list(ax1.get_yticklabels()),
+                                          list(ax2.get_yticklabels())):
 
             land_var_color = PF_COLORS[
                 null_hypothesis[(null_hypothesis['seconds'] == time)
-                                & (null_hypothesis['variable'] == var.get_text())]['delta_l2_land'].values[0]]
+                                & (null_hypothesis['variable'] == var1.get_text())]['delta_l2_land'].values[0]]
             ocean_var_color = PF_COLORS[
                 null_hypothesis[(null_hypothesis['seconds'] == time)
-                                & (null_hypothesis['variable'] == var.get_text())]['delta_l2_ocean'].values[0]]
+                                & (null_hypothesis['variable'] == var2.get_text())]['delta_l2_ocean'].values[0]]
 
+            var1.set_color(land_var_color)
             box1.set_color(land_var_color)
             box1.set_alpha(0.5)
 
+            var2.set_color(ocean_var_color)
             box2.set_color(ocean_var_color)
             box2.set_alpha(0.5)
 
         for artist in ['fliers', 'medians', 'means', 'whiskers', 'caps']:
-            for a1, a2 in zip(bp1['delta_norm_l2_land'][artist],
-                              bp2['delta_norm_l2_ocean'][artist]):
+            for a1, a2 in zip(bp1['norm_delta_l2_land'][artist],
+                              bp2['norm_delta_l2_ocean'][artist]):
                 a1.set_color('black')
                 a2.set_color('black')
 
         st = fig.suptitle("Ensemble ΔRMSD at t={}s".format(time), size=16)
 
-        ax1.set_xlabel('Normalized ensemble mean ΔRMSD')
+        ax1.set_xlabel('Normalized ensemble ΔRMSD')
         ax1.set_title('Land')
 
-        ax2.set_xlabel('Normalized ensemble mean ΔRMSD')
+        ax2.set_xlabel('Normalized ensemble ΔRMSD')
         ax2.set_title('Ocean')
 
         plt.savefig(img_file, bbox_extra_artists=[st], bbox_inches='tight')
         plt.close(fig)
 
+        img_caption = 'Boxplot of ensemble ΔRMSD at t={}s, where the dots show ' \
+                      'the ensemble mean, ther verical lines show the ensemble median, ' \
+                      'the filled boxes cover the interquartile range (IQR), and ' \
+                      'the whiskers cover 1.5*IQR. All values here have been ' \
+                      'normalized by the mean RMSD of the reference ensemble. ' \
+                      'Red and blue indicate fail and pass, respectively, ' \
+                      'according to the criterion described in ' \
+                      'Wan et al. (2017), eq. 6.'.format(time)
         img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
-        img_list.append(el.image(args.test_case, 'Timeline of P_{min}', img_link, height=300))
+        img_list.append(el.image('Boxplot of normalized ensemble ΔRMSD at {}s'.format(time), img_caption, img_link))
+    return img_list
+
+
+def errorbars_delta_rmsd(args, delta_rmsd, null_hypothesis, img_file_format):
+    img_list = []
+    columns = ['instance', 'variable', 'norm_delta_l2_land', 'norm_delta_l2_ocean']
+
+    N = len(delta_rmsd['instance'].unique()) - 1
+    tval_crit = t.ppf(1 - args.p_threshold, df=N - 1)
+
+    # NOTE: σ/√N is the t-test scaling parameter, see:
+    #          https://en.wikipedia.org/wiki/Student%27s_t-test
+    #       In the Wan et al. (2017) fig. 5, and the corresponding article text,
+    #       indicates that these plots show ±2σ with the filled boxes, BUT they
+    #       actually show ±2σ/√N (verified in old NCL code as well).
+    scale_std = 1/np.sqrt(N)
+
+    for time in delta_rmsd['seconds'].unique():
+        img_file = img_file_format.format(time)
+        pdata = delta_rmsd[delta_rmsd['seconds'] == time][columns].groupby('variable').agg(
+                ['mean', np.std])
+
+        fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(10, 8), sharex='all')
+        plt.rc('font', family='serif')
+
+        yvals = pdata.reset_index().index.values + 1
+        ylims = [yvals[0] - 0.5, yvals[-1] + 0.5]
+        land_colors = [PF_COLORS[
+                           null_hypothesis[(null_hypothesis['seconds'] == time)
+                                           & (null_hypothesis['variable'] == var)]['delta_l2_land'].values[0]]
+                       for var in pdata.index.values]
+        l_land_colors = [L_PF_COLORS[lc] for lc in land_colors]
+        ocean_colors = [PF_COLORS[
+                           null_hypothesis[(null_hypothesis['seconds'] == time)
+                                           & (null_hypothesis['variable'] == var)]['delta_l2_ocean'].values[0]]
+                        for var in pdata.index.values]
+        l_ocean_colors = [L_PF_COLORS[oc] for oc in ocean_colors]
+
+        et1 = ax1.errorbar(pdata['norm_delta_l2_land']['mean'].values, yvals,
+                           xerr=np.stack([tval_crit * scale_std * pdata['norm_delta_l2_land']['std'].values,
+                                          2 * scale_std * pdata['norm_delta_l2_land']['std'].values]),
+                           fmt='k.', elinewidth=20, ecolor='lightblue')
+        es1 = ax1.errorbar(pdata['norm_delta_l2_land']['mean'].values, yvals,
+                           xerr=2 * scale_std * pdata['norm_delta_l2_land']['std'].values,
+                           fmt='k.', elinewidth=20)
+
+        et2 = ax2.errorbar(pdata['norm_delta_l2_ocean']['mean'].values, yvals,
+                           xerr=np.stack([tval_crit * scale_std * pdata['norm_delta_l2_ocean']['std'].values,
+                                          2 * scale_std * pdata['norm_delta_l2_ocean']['std'].values]),
+                           fmt='k.', elinewidth=20, ecolor='lightblue')
+        es2 = ax2.errorbar(pdata['norm_delta_l2_ocean']['mean'].values, yvals,
+                           xerr=2 * scale_std * pdata['norm_delta_l2_ocean']['std'].values,
+                           fmt='k.', elinewidth=20)
+
+        _, _, (elines1,) = et1.lines
+        elines1.set_color(l_land_colors)
+        elines1.set_alpha(0.5)
+
+        _, _, (elines1,) = es1.lines
+        elines1.set_color(land_colors)
+        elines1.set_alpha(0.5)
+
+        ax1.plot([0, 0], ylims, 'k-', alpha=0.5)
+        ax1.set_ylim(*ylims)
+        ax1.set_yticks(yvals)
+        ax1.set_yticklabels(pdata.index.values)
+
+        _, _, (elines2,) = et2.lines
+        elines2.set_color(l_ocean_colors)
+        elines2.set_alpha(0.5)
+
+        _, _, (elines2,) = es2.lines
+        elines2.set_color(ocean_colors)
+        elines2.set_alpha(0.5)
+
+        ax2.plot([0, 0], ylims, 'k-', alpha=0.5)
+        ax2.set_ylim(*ylims)
+        ax2.set_yticks(yvals)
+        ax2.set_yticklabels(pdata.index.values)
+
+        for ii, var1, var2 in zip(yvals - 1,
+                                  list(ax1.get_yticklabels()),
+                                  list(ax2.get_yticklabels())):
+
+            var1.set_color(land_colors[ii])
+            var2.set_color(ocean_colors[ii])
+
+        st = fig.suptitle("Ensemble ΔRMSD at t={}s".format(time), size=16)
+
+        ax1.set_xlabel('Normalized ensemble ΔRMSD')
+        ax1.set_title('Land')
+
+        ax2.set_xlabel('Normalized ensemble ΔRMSD')
+        ax2.set_title('Ocean')
+
+        plt.savefig(img_file, bbox_extra_artists=[st], bbox_inches='tight')
+        plt.close(fig)
+
+        img_caption = 'Ensemble-mean ΔRMSD at t={}s (dots) and the ±2σ/√N range of ' \
+                      'the mean (dark filled boxes), where σ denotes the standard ' \
+                      'deviation, N the ensemble size, and σ/√N is the t-test scaling ' \
+                      'parameter. The left end of the light filled boxes shows the ' \
+                      'threshold value corresponding to the critical P {}% in the ' \
+                      'one-sided t-test. All values here have been ' \
+                      'normalized by the mean RMSD of the reference ensemble. ' \
+                      'Red and blue indicate fail and pass, respectively, ' \
+                      'according to the criterion described in ' \
+                      'Wan et al. (2017), eq. 6.'.format(time, args.p_threshold * 100)
+        img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
+        img_list.append(el.image('Distribution of the ensemble ΔRMSD at {}s'.format(time), img_caption, img_link))
     return img_list
 
 
