@@ -63,6 +63,7 @@ from livvkit.util.LIVVDict import LIVVDict
 
 from evv4esm.ensembles import e3sm
 from evv4esm.ensembles.tools import monthly_to_annual_avg, prob_plot
+from evv4esm.utils import bib2html
 
 
 def variable_set(name):
@@ -169,10 +170,14 @@ def run(name, config):
               'Headers': ['h0', 'K-S test (D, p)', 'T test (t, p)'],
               'Data': {'': tbl_data}
               }
-    
-    tl = [el.tab('Table', element_list=[tbl_el]), el.tab('Gallery', element_list=[img_gal])]
 
-    page = el.page(name, __doc__, tab_list=tl)
+    bib_html = bib2html(os.path.join(os.path.dirname(__file__), 'ks.bib'))
+    tl = [el.tab('Table', element_list=[tbl_el]),
+          el.tab('Gallery', element_list=[img_gal]),
+          el.tab('References', element_list=[el.html(bib_html)])]
+
+    # FIXME: Put into a ___ function
+    page = el.page(name, __doc__.replace('\n\n', '<br><br>'), tab_list=tl)
     page['critical'] = args.critical
 
     return page

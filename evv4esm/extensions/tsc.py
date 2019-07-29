@@ -45,8 +45,6 @@ hypothesis that the ensemble mean ΔRMSD is statistically zero at the {}%
 confidence level. A rejection of the null hypothesis (mean ΔRMSD is not
 statistically zero) at any time step for any variable will cause this test to
 fail.
-
-See Wan et al. (2017) for details.
 """
 
 from __future__ import absolute_import, division, print_function, unicode_literals
@@ -140,6 +138,7 @@ def run(name, config, print_details=False):
                 el.tab('Ocean_table', element_list=[ocean_tbl_el]),
                 el.tab('References', element_list=[el.html(bib_html)])]
 
+    # FIXME: Put into a ___ function
     doc_text = __doc__.format((1 - test_args.p_threshold) * 100).replace('\n\n', '<br><br>')
     page = el.page(name, doc_text, tab_list=tab_list)
     page['domains'] = details['domains'].to_dict()

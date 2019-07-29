@@ -60,6 +60,8 @@ import livvkit
 from livvkit.util import elements as el
 from livvkit.util import functions as fn
 
+from evv4esm.utils import bib2html
+
 # logger = logging.getLogger(__name__)
 
 
@@ -351,13 +353,15 @@ def run(name, config, print_details=False):
                        'T test (t, p)': details['T test (t, p)'],
                        'Ensembles': 'identical' if details['h0'] == 'accept' else 'distinct'}
               }
-
     element_list = [tbl_el, img_gal]
 
     if print_details:
         _print_details(details)
 
-    page = el.page(name, __doc__, element_list=element_list)
+    bib_html = bib2html(os.path.join(os.path.dirname(__file__), 'pg.bib'))
+    tab_list = [el.tab('Results', element_list=element_list),
+                el.tab('References', element_list=[el.html(bib_html)])]
+    page = el.page(name, __doc__.replace('\n\n', '<br><br>'), tab_list=tab_list)
 
     return page
 
@@ -373,12 +377,14 @@ def print_summary(summary):
 # noinspection PyUnusedLocal
 def summarize_result(results_page):
     summary = {'Case': results_page['Title']}
-    for elem in results_page['Data']['Elements']:
-        if elem['Type'] == 'Table' and elem['Title'] == 'Results':
-            summary['Null hypothesis'] = elem['Data']['h0']
-            summary['T test (t, p)'] = \
-                '({}, {})'.format(*elem['Data']['T test (t, p)'])
-            summary['Ensembles'] = 'identical' if elem['Data']['h0'] == 'accept' else 'distinct'
+    for tab in results_page['Data']['Tabs']:
+        if tab['Title'] == 'Results':
+            for elem in tab['Elements']:
+                if  elem['Type'] == 'Table' and elem['Title'] == 'Results':
+                    summary['Null hypothesis'] = elem['Data']['h0']
+                    summary['T test (t, p)'] = \
+                        '({}, {})'.format(*elem['Data']['T test (t, p)'])
+                    summary['Ensembles'] = 'identical' if elem['Data']['h0'] == 'accept' else 'distinct'
             break
         else:
             continue
