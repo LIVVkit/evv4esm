@@ -82,6 +82,7 @@ setup(
           'livvkit',
           'netCDF4',
           'matplotlib',
+          'pybtex',
           ],
 
       packages=[
