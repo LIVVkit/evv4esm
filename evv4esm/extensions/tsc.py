@@ -29,7 +29,24 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """The Time Step Convergence Test:
-This tests...
+This tests the null hypothesis that the convergence of the time stepping error
+for a set of key atmospheric variables is the same for a reference ensemble and
+a test ensemble. Both the reference and test ensemble are generated with a
+two-second time step, and for each variable the RMSD between each ensemble and
+a truth ensemble, generated with a one-second time step, is calculated. RMSD is
+calculated globally and over two domains, the land and the ocean. The land/ocean
+domains contain just the atmosphere points that are over land/ocean cells.
+
+At each 10 second interval during the 10 minute long simulations, the difference
+in the reference and test RMSDs for each variable, each ensemble member, and each
+domain are calculated and these ΔRMSDs should be zero for identical climates. A
+one sided (due to self convergence) Student's T Test is used to test the null
+hypothesis that the ensemble mean ΔRMSD is statistically zero at the {}%
+confidence level. A rejection of the null hypothesis (mean ΔRMSD is not
+statistically zero) at any time step for any variable will cause this test to
+fail.
+
+See Wan et al. (2017) for details.
 """
 
 from __future__ import absolute_import, division, print_function, unicode_literals
@@ -54,6 +71,7 @@ from livvkit.util import functions as fn
 from livvkit.util.LIVVDict import LIVVDict
 
 from evv4esm.ensembles import e3sm
+from evv4esm.utils import bib2html
 
 PF_COLORS = {'Pass': 'cornflowerblue', 'Accept': 'cornflowerblue',
              'Fail': 'maroon', 'Reject': 'maroon'}
@@ -116,11 +134,14 @@ def run(name, config, print_details=False):
                     'Headers': test_args.variables,
                     'Data': {'': details['ocean']}
                     }
+    bib_html = bib2html(os.path.join(os.path.dirname(__file__), 'tsc.bib'))
     tab_list = [el.tab('Gallery', element_list=[img_gal]),
                 el.tab('Land_table', element_list=[land_tbl_el]),
-                el.tab('Ocean_table', element_list=[ocean_tbl_el])]
+                el.tab('Ocean_table', element_list=[ocean_tbl_el]),
+                el.tab('References', element_list=[el.html(bib_html)])]
 
-    page = el.page(name, __doc__, tab_list=tab_list)
+    doc_text = __doc__.format((1 - test_args.p_threshold) * 100).replace('\n\n', '<br><br>')
+    page = el.page(name, doc_text, tab_list=tab_list)
     page['domains'] = details['domains'].to_dict()
     page['overall'] = details['overall']
 
