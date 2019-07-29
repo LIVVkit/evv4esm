@@ -289,7 +289,7 @@ def main(args):
                'Fortran code modules executed within this time ' \
                'step.'.format(args.test_name, args.ref_name)
     img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
-    img_gallery = el.gallery('Perturbation growth', [
+    img_gallery = el.gallery('', [
         el.image(args.test_case, img_desc, img_link, height=600)
     ])
 
@@ -302,9 +302,10 @@ def main(args):
 
     t_stat, p_val = stats.ttest_ind(pge_ends_cld, pge_ends_comp)
 
-    details['T test (t, p)'] = (t_stat, p_val)
-    if np.isnan(details['T test (t, p)']).any() or np.isinf(details['T test (t, p)']).any():
+    if np.isnan((t_stat, p_val)).any() or np.isinf((t_stat, p_val)).any():
         details['T test (t, p)'] = (None, None)
+    else:
+        details['T test (t, p)'] = '({:.3f}, {:.3f})'.format(t_stat, p_val)
 
     # logger.warn(" T value:" + str(t_stat))
     # logger.warn(" P value:" + str(p_val))
@@ -348,25 +349,24 @@ def run(name, config, print_details=False):
 
     tbl_el = {'Type': 'Table',
               'Title': 'Results',
-              'Headers': ['h0', 'T test (t, p)'],
-              'Data': {'h0': details['h0'],
+              'Headers': ['Test status', 'Null hypothesis', 'T test (t, p)', 'Ensembles'],
+              'Data': {'Null hypothesis': details['h0'],
                        'T test (t, p)': details['T test (t, p)'],
-                       'Ensembles': 'identical' if details['h0'] == 'accept' else 'distinct'}
+                       'Test status': 'pass' if details['h0'] == 'accept' else 'fail',
+                       'Ensembles': 'statistically identical' if details['h0'] == 'accept' else 'statistically different'}
               }
-    element_list = [tbl_el, img_gal]
 
     if print_details:
         _print_details(details)
 
     bib_html = bib2html(os.path.join(os.path.dirname(__file__), 'pg.bib'))
-    tab_list = [el.tab('Results', element_list=element_list),
+    tab_list = [el.tab('Figures', element_list=[img_gal]),
                 el.tab('References', element_list=[el.html(bib_html)])]
-    page = el.page(name, __doc__.replace('\n\n', '<br><br>'), tab_list=tab_list)
+    page = el.page(name, __doc__.replace('\n\n', '<br><br>'), element_list=[tbl_el], tab_list=tab_list)
 
     return page
 
 
-# noinspection PyUnusedLocal
 def print_summary(summary):
     print('    Perturbation growth test: {}'.format(summary['']['Case']))
     print('      Null hypothesis: {}'.format(summary['']['Null hypothesis']))
@@ -374,17 +374,14 @@ def print_summary(summary):
     print('      Ensembles: {}\n'.format(summary['']['Ensembles']))
 
 
-# noinspection PyUnusedLocal
 def summarize_result(results_page):
     summary = {'Case': results_page['Title']}
-    for tab in results_page['Data']['Tabs']:
-        if tab['Title'] == 'Results':
-            for elem in tab['Elements']:
-                if  elem['Type'] == 'Table' and elem['Title'] == 'Results':
-                    summary['Null hypothesis'] = elem['Data']['h0']
-                    summary['T test (t, p)'] = \
-                        '({}, {})'.format(*elem['Data']['T test (t, p)'])
-                    summary['Ensembles'] = 'identical' if elem['Data']['h0'] == 'accept' else 'distinct'
+    for elem in results_page['Data']['Elements']:
+        if elem['Type'] == 'Table' and elem['Title'] == 'Results':
+            summary['Test status'] = 'pass' if elem['Data']['Null hypothesis'] == 'accept' else 'fail'
+            summary['Null hypothesis'] = elem['Data']['Null hypothesis']
+            summary['T test (t, p)'] = elem['Data']['T test (t, p)']
+            summary['Ensembles'] = 'statistically identical' if elem['Data']['Null hypothesis'] == 'accept' else 'statistically different'
             break
         else:
             continue
@@ -398,7 +395,7 @@ def populate_metadata():
     metadata = {'Type': 'ValSummary',
                 'Title': 'Validation',
                 'TableTitle': 'Perturbation growth test',
-                'Headers': ['Null hypothesis', 'T test (t, p)', 'Ensembles']
+                'Headers': ['Test status', 'Null hypothesis', 'T test (t, p)', 'Ensembles']
                 }
     return metadata
 

@@ -133,17 +133,25 @@ def run(name, config, print_details=False):
                     'Data': {'': details['ocean']}
                     }
     bib_html = bib2html(os.path.join(os.path.dirname(__file__), 'tsc.bib'))
-    tab_list = [el.tab('Gallery', element_list=[img_gal]),
+    tab_list = [el.tab('Figures', element_list=[img_gal]),
                 el.tab('Land_table', element_list=[land_tbl_el]),
                 el.tab('Ocean_table', element_list=[ocean_tbl_el]),
                 el.tab('References', element_list=[el.html(bib_html)])]
 
+    results = {'Type': 'Table',
+               'Title': 'Results',
+               'Headers': ['Test status', 'Global', 'Land', 'Ocean', 'Ensembles'],
+               'Data': {'Test status': details['overall'],
+                        'Global': details['domains']['delta_l2_global'],
+                        'Land': details['domains']['delta_l2_land'],
+                        'Ocean': details['domains']['delta_l2_ocean'],
+                        'Ensembles': 'statistically identical' if details['overall'] == 'Pass' else 'statistically different',
+                        }
+               }
+
     # FIXME: Put into a ___ function
     doc_text = __doc__.format((1 - test_args.p_threshold) * 100).replace('\n\n', '<br><br>')
-    page = el.page(name, doc_text, tab_list=tab_list)
-    page['domains'] = details['domains'].to_dict()
-    page['overall'] = details['overall']
-
+    page = el.page(name, doc_text, element_list=[results], tab_list=tab_list)
     return page
 
 
@@ -568,15 +576,19 @@ def print_summary(summary):
     print('      Global: {}'.format(summary['']['Global']))
     print('      Land: {}'.format(summary['']['Land']))
     print('      Ocean: {}'.format(summary['']['Ocean']))
-    print('      Ensembles: {}\n'.format(summary['']['Ensembles']))
+    print('      Ensembles: {}'.format(summary['']['Ensembles']))
+    print('      Test status: {}\n'.format(summary['']['Test status']))
 
 
 def summarize_result(results_page):
-    summary = {'Case': results_page['Title'],
-               'Global': results_page['domains']['delta_l2_global'],
-               'Land': results_page['domains']['delta_l2_land'],
-               'Ocean': results_page['domains']['delta_l2_ocean'],
-               'Ensembles': 'identical' if results_page['overall'] == 'Pass' else 'distinct'}
+    summary = {'Case': results_page['Title']}
+    for elem in results_page['Data']['Elements']:
+        if elem['Type'] == 'Table' and elem['Title'] == 'Results':
+               summary['Global'] = elem['Data']['Global']
+               summary['Land'] = elem['Data']['Land']
+               summary['Ocean'] = elem['Data']['Ocean']
+               summary['Ensembles'] = elem['Data']['Ensembles']
+               summary['Test status'] = elem['Data']['Test status']
     return {'': summary}
 
 
@@ -589,7 +601,7 @@ def populate_metadata():
     metadata = {'Type': 'ValSummary',
                 'Title': 'Validation',
                 'TableTitle': 'Time step convergence test',
-                'Headers': ['Global', 'Land', 'Ocean', 'Ensembles']}
+                'Headers': ['Test status', 'Global', 'Land', 'Ocean', 'Ensembles']}
     return metadata
 
 

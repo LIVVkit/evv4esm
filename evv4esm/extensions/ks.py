@@ -163,23 +163,30 @@ def run(name, config):
     details, img_gal = main(args)
 
     tbl_data = OrderedDict(sorted(details.items()))
-    
     tbl_el = {'Type': 'V-H Table',
               'Title': 'Validation',
               'TableTitle': 'Analyzed variables',
               'Headers': ['h0', 'K-S test (D, p)', 'T test (t, p)'],
               'Data': {'': tbl_data}
               }
-
     bib_html = bib2html(os.path.join(os.path.dirname(__file__), 'ks.bib'))
-    tl = [el.tab('Table', element_list=[tbl_el]),
-          el.tab('Gallery', element_list=[img_gal]),
+    tl = [el.tab('Details', element_list=[tbl_el]),
+          el.tab('Figures', element_list=[img_gal]),
           el.tab('References', element_list=[el.html(bib_html)])]
 
-    # FIXME: Put into a ___ function
-    page = el.page(name, __doc__.replace('\n\n', '<br><br>'), tab_list=tl)
-    page['critical'] = args.critical
+    rejects = [var for var, dat in tbl_data.items() if dat['h0'] == 'reject']
+    results = {'Type': 'Table',
+               'Title': 'Results',
+               'Headers': ['Test status', 'Variables analyzed', 'Rejecting', 'Critical value', 'Ensembles'],
+               'Data': {'Test status': 'pass' if len(rejects) < args.critical else 'fail',
+                        'Variables analyzed': len(tbl_data.keys()),
+                        'Rejecting': len(rejects),
+                        'Critical value': args.critical,
+                        'Ensembles': 'statistically identical' if len(rejects) < args.critical else 'statistically different'}
+               }
 
+    # FIXME: Put into a ___ function
+    page = el.page(name, __doc__.replace('\n\n', '<br><br>'), element_list=[results], tab_list=tl)
     return page
 
 
@@ -199,10 +206,11 @@ def case_files(args):
 
 def print_summary(summary):
     print('    Kolmogorov-Smirnov Test: {}'.format(summary['']['Case']))
-    print('      Variables analyzed: {}'.format(summary['']['Variables Analyzed']))
+    print('      Variables analyzed: {}'.format(summary['']['Variables analyzed']))
     print('      Rejecting: {}'.format(summary['']['Rejecting']))
-    print('      Critical value: {}'.format(summary['']['Critical Value']))
-    print('      Ensembles: {}\n'.format(summary['']['Ensembles']))
+    print('      Critical value: {}'.format(summary['']['Critical value']))
+    print('      Ensembles: {}'.format(summary['']['Ensembles']))
+    print('      Test status: {}\n'.format(summary['']['Test status']))
 
 
 def print_details(details):
@@ -215,15 +223,14 @@ def print_details(details):
 
 def summarize_result(results_page):
     summary = {'Case': results_page['Title']}
-    for tab in results_page['Data']['Tabs']:
-        for elem in tab['Elements']:
-            if elem['Type'] == 'V-H Table':
-                summary['Variables Analyzed'] = len(elem['Data'][''].keys())
-                rejects = [var for var, dat in elem['Data'][''].items() if dat['h0'] == 'reject']
-                summary['Rejecting'] = len(rejects)
-                summary['Critical Value'] = results_page['critical']
-                summary['Ensembles'] = 'identical' if len(rejects) < results_page['critical'] else 'distinct'
-                break
+    for elem in results_page['Data']['Elements']:
+        if elem['Type'] == 'Table' and elem['Title'] == 'Results':
+            summary['Test status'] = elem['Data']['Test status']
+            summary['Variables analyzed'] = elem['Data']['Variables analyzed']
+            summary['Rejecting'] = elem['Data']['Rejecting']
+            summary['Critical value'] = elem['Data']['Critical value']
+            summary['Ensembles'] = elem['Data']['Ensembles']
+            break
         else:
             continue
     return {'': summary}
@@ -238,7 +245,7 @@ def populate_metadata():
     metadata = {'Type': 'ValSummary',
                 'Title': 'Validation',
                 'TableTitle': 'Kolmogorov-Smirnov test',
-                'Headers': ['Variables Analyzed', 'Rejecting', 'Critical Value', 'Ensembles']}
+                'Headers': ['Test status', 'Variables analyzed', 'Rejecting', 'Critical value', 'Ensembles']}
     return metadata
     
 
