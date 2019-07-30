@@ -253,46 +253,6 @@ def main(args):
         ref_rmse = ref_cld.variables['cld_rmse'][...]
         details['ref. data'] = ref_rmse
 
-    ref_max_y = ref_rmse.max(axis=(0, 1)).astype(np.double)
-    ref_min_y = ref_rmse.min(axis=(0, 1)).astype(np.double)
-
-    cmp_max_y = comp_rmse.max(axis=(0, 1)).astype(np.double)
-    cmp_min_y = comp_rmse.min(axis=(0, 1)).astype(np.double)
-
-    img_file = os.path.relpath(os.path.join(args.img_dir, 'plot_comp.png'), os.getcwd())
-    fig, ax = plt.subplots(figsize=(10, 8))
-    plt.rc('font', family='serif')
-
-    ax.semilogy(ref_max_y, color='C0')
-    ax.semilogy(ref_min_y, color='C0')
-    ax.fill_between(range(ref_dims[-1]), ref_min_y, ref_max_y, color='C0', alpha=0.5)
-
-    ax.semilogy(cmp_max_y, color='C1')
-    ax.semilogy(cmp_min_y, color='C1')
-    ax.fill_between(range(cmp_dims[-1]), cmp_min_y, cmp_max_y, color='C1', alpha=0.5)
-
-    ax.set_xticks(range(len(args.variables)))
-    ax.set_xticklabels(args.variables, rotation=45, ha='right')
-    ax.set_ylabel('Temperature RMSE (K)')
-
-    patch_list = [mpatches.Patch(color='C0', alpha=0.5, label='Ref.'),
-                  mpatches.Patch(color='C1', alpha=0.5, label='Test')]
-    plt.legend(handles=patch_list)
-
-    plt.tight_layout()
-    plt.savefig(img_file, bbox_inches='tight')
-    plt.close(fig)
-
-    img_desc = 'The evolution of the maximum temperature (K) RMSE over a single ' \
-               'time step for the {} simulation (orange) and the {} simulation ' \
-               '(blue). The x-axis details the physical parameterizations and/or ' \
-               'Fortran code modules executed within this time ' \
-               'step.'.format(args.test_name, args.ref_name)
-    img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
-    img_gallery = el.gallery('', [
-        el.image(args.test_case, img_desc, img_link, height=600)
-    ])
-
     pge_ends_cld = ref_rmse[:, :, -1]
     pge_ends_comp = comp_rmse[:, :, -1]
 
@@ -309,10 +269,10 @@ def main(args):
 
     # logger.warn(" T value:" + str(t_stat))
     # logger.warn(" P value:" + str(p_val))
-
+    crit = 0.05
     if t_stat is None:
         details['h0'] = '-'
-    elif p_val < 0.05:
+    elif p_val < crit:
         details['h0'] = 'reject'
     else:
         details['h0'] = 'accept'
@@ -321,6 +281,71 @@ def main(args):
 
     details['test data'] = rmse
 
+    ref_max_y = ref_rmse.max(axis=(0, 1)).astype(np.double)
+    ref_min_y = ref_rmse.min(axis=(0, 1)).astype(np.double)
+
+    cmp_max_y = comp_rmse.max(axis=(0, 1)).astype(np.double)
+    cmp_min_y = comp_rmse.min(axis=(0, 1)).astype(np.double)
+
+    img_file = os.path.relpath(os.path.join(args.img_dir, 'plot_comp.png'), os.getcwd())
+    fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(10, 8), sharey='all', gridspec_kw={'width_ratios': [3, 1]})
+    plt.rc('font', family='serif')
+
+    ax1.semilogy(ref_max_y, color='C0')
+    ax1.semilogy(ref_min_y, color='C0')
+    ax1.fill_between(range(ref_dims[-1]), ref_min_y, ref_max_y, color='C0', alpha=0.5)
+
+    ax1.semilogy(cmp_max_y, color='C1')
+    ax1.semilogy(cmp_min_y, color='C1')
+    ax1.fill_between(range(cmp_dims[-1]), cmp_min_y, cmp_max_y, color='C1', alpha=0.5)
+
+    ax1.set_xticks(range(len(args.variables)))
+    ax1.set_xticklabels(args.variables, rotation=45, ha='right')
+    ax1.set_ylabel('Temperature RMSE (K)')
+
+    patch_list = [mpatches.Patch(color='C0', alpha=0.5, label='Ref.'),
+                  mpatches.Patch(color='C1', alpha=0.5, label='Test')]
+    ax1.legend(handles=patch_list, loc='upper left')
+
+    scale_std = 1/np.sqrt(len(pge_ends_comp))
+    tval_crit = stats.t.ppf(1 - crit, df=len(pge_ends_comp) - 1)
+    ax2.errorbar(1, pge_ends_cld.mean(), xerr=np.stack([[0.1, 0.1]]).T,
+                 fmt='none', ecolor='C0')
+    # Note: Because these are so close to zero, but are best plotted on a
+    #        semilogy plot, the mean ± 2*σ/√N range or the mean ± Tc*σ/√N, where
+    #        Tc is the critical t test value, can cross zero.
+    ax2.errorbar(1, pge_ends_comp.mean(), yerr=pge_ends_comp.std() * tval_crit * scale_std,
+                 fmt='oC1', elinewidth=20, ecolor='C1', alpha=0.5)
+    # ax2.errorbar(0.5, pge_ends_comp.mean(), yerr=pge_ends_comp.std() * 2 * scale_std,
+    #              fmt='k.', elinewidth=20, ecolor='C1', alpha=0.5)
+
+    ax2.set_xlim([0.8, 1.2])
+    ax2.set_xticks([1])
+    ax2.set_xticklabels([args.variables[-1]], rotation=45, ha='right')
+
+    plt.tight_layout()
+    plt.savefig(img_file, bbox_inches='tight')
+    plt.close(fig)
+
+    img_desc = 'Left: The evolution of the maximum temperature (K) RMSE over a ' \
+               'single time step for the {test} simulation (orange) and the {ref} ' \
+               'simulation (blue), plotted with a log scale on the y-axis. ' \
+               'The x-axis details the physical parameterizations ' \
+               'and/or Fortran code modules executed within this time step. ' \
+               'Right: the blue line indicates the {ref} ensemble mean at the ' \
+               'end of the time step and the orange circle is the {test} ensemble mean. ' \
+               'The orange box highlights the threshold values corresponding to the ' \
+               'critical P {crit}% in the two-sided t-test. For the test to pass, ' \
+               'the orange box must overlap the blue line. Note: The orange box may appear ' \
+               'exceptionally large as  these  values  are very close to zero and ' \
+               'the mean ± Tc*σ/√N range may cross zero, where Tc is the  critical ' \
+               't-test value, σ is the ensemble standard deviation, N is the size ' \
+               'of the ensemble, and σ/√N represents the t-test scaling ' \
+               'parameter.'.format(test=args.test_name, ref=args.ref_name, crit=crit * 100)
+    img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
+    img_gallery = el.gallery('', [
+        el.image(args.test_case, img_desc, img_link, height=600)
+    ])
     return details, img_gallery
 
 
