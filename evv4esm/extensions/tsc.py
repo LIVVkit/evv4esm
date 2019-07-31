@@ -60,7 +60,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.ticker as tkr
 import matplotlib.pyplot as plt
-from scipy.stats import ttest_1samp, t
+from scipy import stats
 from netCDF4 import Dataset
 
 import livvkit
@@ -120,22 +120,30 @@ def run(name, config, print_details=False):
     if print_details:
         _print_details(details)
 
+    domain_headers = ['Null hypothesis', 'T test (t, P)']
+    global_tbl_el = {'Type': 'V-H Table',
+                     'Title': 'Validation',
+                     'TableTitle': 'Analyzed variables',
+                     'Headers': domain_headers,
+                     'Data': details['global'],
+                     }
     land_tbl_el = {'Type': 'V-H Table',
                    'Title': 'Validation',
                    'TableTitle': 'Analyzed variables',
-                   'Headers': test_args.variables,
-                   'Data': {'': details['land']}
+                   'Headers': domain_headers,
+                   'Data': details['land'],
                    }
     ocean_tbl_el = {'Type': 'V-H Table',
                     'Title': 'Validation',
                     'TableTitle': 'Analyzed variables',
-                    'Headers': test_args.variables,
-                    'Data': {'': details['ocean']}
+                    'Headers': domain_headers,
+                    'Data': details['ocean'],
                     }
     bib_html = bib2html(os.path.join(os.path.dirname(__file__), 'tsc.bib'))
     tab_list = [el.tab('Figures', element_list=[img_gal]),
-                el.tab('Land_table', element_list=[land_tbl_el]),
-                el.tab('Ocean_table', element_list=[ocean_tbl_el]),
+                el.tab('Global_details', element_list=[global_tbl_el]),
+                el.tab('Land_details', element_list=[land_tbl_el]),
+                el.tab('Ocean_details', element_list=[ocean_tbl_el]),
                 el.tab('References', element_list=[el.html(bib_html)])]
 
     results = {'Type': 'Table',
@@ -247,7 +255,7 @@ def main(args):
             lambda g: g[delta_columns] / g[ref_columns].mean().values)
 
     testee = delta_rmsd.query(' seconds >= @args.time_slice[0] & seconds <= @args.time_slice[-1]')
-    ttest = testee.groupby(['seconds', 'variable']).agg(ttest_1samp, popmean=0.0).drop(columns='instance')
+    ttest = testee.groupby(['seconds', 'variable']).agg(stats.ttest_1samp, popmean=0.0).drop(columns='instance')
 
     # H0: enemble_mean_ΔRMSD_{t,var} is (statistically) zero and therefore, the simulations are identical
     null_hypothesis = ttest.applymap(lambda x: 'Reject' if x[1] < args.p_threshold else 'Accept')
@@ -261,16 +269,21 @@ def main(args):
 
     land_data = LIVVDict()
     ocean_data = LIVVDict()
+    global_data = LIVVDict()
     for sec in ttest['seconds'].unique():
         for var in ttest['variable'].unique():
+            sec_str = 'Time: {:03d}s'.format(sec)
             t_data = ttest.loc[(ttest['seconds'] == sec) & (ttest['variable'] == var)]
             h0_data = null_hypothesis.loc[(null_hypothesis['seconds'] == sec) & (null_hypothesis['variable'] == var)]
-            land_data[sec][var] = 'h0: {}, T test (t, p): ({}, {})'.format(
-                    h0_data['delta_l2_land'].values[0], *t_data['delta_l2_land'].values[0])
-            ocean_data[sec][var] = 'h0: {}, T test (t, p): ({}, {})'.format(
-                    h0_data['delta_l2_ocean'].values[0], *t_data['delta_l2_ocean'].values[0])
+            global_data[sec_str][var]['Null hypothesis'] = h0_data['delta_l2_global'].values[0]
+            land_data[sec_str][var]['Null hypothesis'] = h0_data['delta_l2_land'].values[0]
+            ocean_data[sec_str][var]['Null hypothesis'] = h0_data['delta_l2_ocean'].values[0]
 
-    details = {'ocean': ocean_data, 'land': land_data,
+            global_data[sec_str][var]['T test (t, P)'] = '({:.3f}, {:.4f})'.format(*t_data['delta_l2_global'].values[0])
+            land_data[sec_str][var]['T test (t, P)'] = '({:.3f}, {:.4f})'.format(*t_data['delta_l2_land'].values[0])
+            ocean_data[sec_str][var]['T test (t, P)'] = '({:.3f}, {:.4f})'.format(*t_data['delta_l2_ocean'].values[0])
+
+    details = {'ocean': ocean_data, 'land': land_data, 'global': global_data,
                'domains': domains, 'overall': overall}
 
     fail_timeline_img = os.path.relpath(os.path.join(args.img_dir, 'failing_timeline.png'), os.getcwd())
@@ -457,7 +470,7 @@ def errorbars_delta_rmsd(args, delta_rmsd, null_hypothesis, img_file_format):
     columns = ['instance', 'variable', 'norm_delta_l2_land', 'norm_delta_l2_ocean']
 
     N = len(delta_rmsd['instance'].unique()) - 1
-    tval_crit = t.ppf(1 - args.p_threshold, df=N - 1)
+    tval_crit = stats.t.ppf(1 - args.p_threshold, df=N - 1)
 
     # NOTE: σ/√N is the t-test scaling parameter, see:
     #          https://en.wikipedia.org/wiki/Student%27s_t-test
