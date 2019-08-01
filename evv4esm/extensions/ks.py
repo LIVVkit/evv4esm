@@ -170,8 +170,8 @@ def run(name, config):
               'Data': {'': tbl_data}
               }
     bib_html = bib2html(os.path.join(os.path.dirname(__file__), 'ks.bib'))
-    tl = [el.tab('Details', element_list=[tbl_el]),
-          el.tab('Figures', element_list=[img_gal]),
+    tl = [el.tab('Figures', element_list=[img_gal]),
+          el.tab('Details', element_list=[tbl_el]),
           el.tab('References', element_list=[el.html(bib_html)])]
 
     rejects = [var for var, dat in tbl_data.items() if dat['h0'] == 'reject']
@@ -293,7 +293,8 @@ def main(args):
             details[var]['h0'] = 'accept'
 
         img_file = os.path.relpath(os.path.join(args.img_dir, var + '.png'), os.getcwd())
-        prob_plot(annuals_1, annuals_2, 20, img_file, test_name=args.test_case, ref_name=args.ref_case)
+        prob_plot(annuals_1, annuals_2, 20, img_file, test_name=args.test_case, ref_name=args.ref_case,
+                  pf=details[var]['h0'])
         
         img_desc = 'Mean annual global average of {} for <em>{}</em> is {:.3e} ' \
                    'and for <em>{}</em> is {:.3e}'.format(var,

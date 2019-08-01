@@ -34,6 +34,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from evv4esm import pf_color_picker
 
 def monthly_to_annual_avg(var_data, cal='ignore'):
     if len(var_data) != 12:
@@ -50,7 +51,7 @@ def monthly_to_annual_avg(var_data, cal='ignore'):
 
 
 def prob_plot(test, ref, n_q, img_file, test_name='Test', ref_name='Ref.',
-              thing='annual global averages'):
+              thing='annual global averages', pf=None):
     # NOTE: Following the methods described in
     #       https://stackoverflow.com/questions/43285752
     #       to create the Q-Q and P-P plots
@@ -103,9 +104,10 @@ def prob_plot(test, ref, n_q, img_file, test_name='Test', ref_name='Ref.',
         norm1 = (ref - min_) / (max_ - min_)
         norm2 = (test - min_) / (max_ - min_)
 
-        ax1.scatter(np.percentile(norm1, q), np.percentile(norm2, q), zorder=2)
-        ax3.hist(norm1, bins=n_q)
-        ax4.hist(norm2, bins=n_q)
+        ax1.scatter(np.percentile(norm1, q), np.percentile(norm2, q),
+                    color=pf_color_picker.get(pf, '#1F77B4'), zorder=2)
+        ax3.hist(norm1, bins=n_q, color=pf_color_picker.get(pf, '#1F77B4'))
+        ax4.hist(norm2, bins=n_q, color=pf_color_picker.get(pf, '#1F77B4'))
 
     # bin both series into equal bins and get cumulative counts for each bin
     bnds = np.linspace(min_, max_, n_q)
@@ -119,7 +121,8 @@ def prob_plot(test, ref, n_q, img_file, test_name='Test', ref_name='Ref.',
         ppxh = np.cumsum(ppxh)
         ppyh = np.cumsum(ppyh)
 
-        ax2.scatter(ppyh.values, ppxh.values, zorder=2)
+        ax2.scatter(ppyh.values, ppxh.values,
+                    color=pf_color_picker.get(pf, '#1F77B4'), zorder=2)
 
     plt.tight_layout()
     plt.savefig(img_file, bbox_inches='tight')

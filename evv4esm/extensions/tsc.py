@@ -70,12 +70,7 @@ from livvkit.util.LIVVDict import LIVVDict
 
 from evv4esm.ensembles import e3sm
 from evv4esm.utils import bib2html
-
-PF_COLORS = {'Pass': 'cornflowerblue', 'Accept': 'cornflowerblue',
-             'Fail': 'maroon', 'Reject': 'maroon'}
-
-L_PF_COLORS = {'Pass': 'lightskyblue', 'Accept': 'lightskyblue', 'cornflowerblue': 'lightskyblue',
-               'Fail': 'lightcoral', 'Reject': 'lightcoral', 'maroon': 'lightcoral'}
+from evv4esm import pf_color_picker, light_pf_color_picker
 
 
 def parse_args(args=None):
@@ -326,7 +321,7 @@ def plot_failing_variables(args, null_hypothesis, img_file):
     fig, ax = plt.subplots(figsize=(10, 8))
     plt.rc('font', family='serif')
 
-    pdata.plot(linestyle='-', marker='o', color='maroon')
+    pdata.plot(linestyle='-', marker='o', color=pf_color_picker.get('fail'))
     ax.set_ybound(0, 20)
     ax.set_yticks(np.arange(0, 24, 4))
     ax.set_yticks(np.arange(0, 21, 1), minor=True)
@@ -356,18 +351,18 @@ def plot_pmin(args, ttest, img_file):
     passes = pdata[pdata.ge(args.p_threshold * 100)]
 
     if passes.empty:
-        fails.plot(logy=True, linestyle='-', marker='o', color='maroon')
+        fails.plot(logy=True, linestyle='-', marker='o', color=pf_color_picker.get('fail'))
     elif fails.empty:
-        passes.plot(logy=True, linestyle='-', marker='o', color='cornflowerblue')
+        passes.plot(logy=True, linestyle='-', marker='o', color=pf_color_picker.get('pass'))
     else:
         first_fail = fails.index[0]
-        pdata.loc[:first_fail].plot(logy=True, linestyle='-', marker='o', color='cornflowerblue')
-        pdata.loc[first_fail:].plot(logy=True, linestyle='-', marker='o', color='maroon')
+        pdata.loc[:first_fail].plot(logy=True, linestyle='-', marker='o', color=pf_color_picker.get('pass'))
+        pdata.loc[first_fail:].plot(logy=True, linestyle='-', marker='o', color=pf_color_picker.get('fail'))
 
     ax.plot(args.time_slice, [0.5, 0.5], 'k--')
-    ax.text(np.mean(args.time_slice), 10 ** -1, 'Fail', fontsize=15, color='maroon',
+    ax.text(np.mean(args.time_slice), 10 ** -1, 'Fail', fontsize=15, color=pf_color_picker.get('fail'),
             horizontalalignment='center')
-    ax.text(np.mean(args.time_slice), 10 ** 0, 'Pass', fontsize=15, color='cornflowerblue',
+    ax.text(np.mean(args.time_slice), 10 ** 0, 'Pass', fontsize=15, color=pf_color_picker.get('pass'),
             horizontalalignment='center')
 
     ax.set_ybound(100, 10 ** -15)
@@ -419,10 +414,10 @@ def boxplot_delta_rmsd(args, delta_rmsd, null_hypothesis, img_file_format):
                                           list(ax1.get_yticklabels()),
                                           list(ax2.get_yticklabels())):
 
-            land_var_color = PF_COLORS[
+            land_var_color = pf_color_picker[
                 null_hypothesis[(null_hypothesis['seconds'] == time)
                                 & (null_hypothesis['variable'] == var1.get_text())]['delta_l2_land'].values[0]]
-            ocean_var_color = PF_COLORS[
+            ocean_var_color = pf_color_picker[
                 null_hypothesis[(null_hypothesis['seconds'] == time)
                                 & (null_hypothesis['variable'] == var2.get_text())]['delta_l2_ocean'].values[0]]
 
@@ -489,16 +484,16 @@ def errorbars_delta_rmsd(args, delta_rmsd, null_hypothesis, img_file_format):
 
         yvals = pdata.reset_index().index.values + 1
         ylims = [yvals[0] - 0.5, yvals[-1] + 0.5]
-        land_colors = [PF_COLORS[
+        land_colors = [pf_color_picker[
                            null_hypothesis[(null_hypothesis['seconds'] == time)
                                            & (null_hypothesis['variable'] == var)]['delta_l2_land'].values[0]]
                        for var in pdata.index.values]
-        l_land_colors = [L_PF_COLORS[lc] for lc in land_colors]
-        ocean_colors = [PF_COLORS[
+        l_land_colors = [light_pf_color_picker[lc] for lc in land_colors]
+        ocean_colors = [pf_color_picker[
                            null_hypothesis[(null_hypothesis['seconds'] == time)
                                            & (null_hypothesis['variable'] == var)]['delta_l2_ocean'].values[0]]
                         for var in pdata.index.values]
-        l_ocean_colors = [L_PF_COLORS[oc] for oc in ocean_colors]
+        l_ocean_colors = [light_pf_color_picker[oc] for oc in ocean_colors]
 
         et1 = ax1.errorbar(pdata['norm_delta_l2_land']['mean'].values, yvals,
                            xerr=np.stack([tval_crit * scale_std * pdata['norm_delta_l2_land']['std'].values,
