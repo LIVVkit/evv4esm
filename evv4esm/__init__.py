@@ -29,5 +29,5 @@
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-__version_info__ = (0, 1, 1)
+__version_info__ = (0, 2, 0)
 __version__ = '.'.join(str(vi) for vi in __version_info__)
