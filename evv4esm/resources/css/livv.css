@@ -163,10 +163,11 @@ td {
 }
 
 #tabs .ui-state-default {
-    border-color: #F26C3A;
+    border-color: #FCB59A;
 }
 
 #tabs .ui-state-active {
+    border-color: #F26C3A;
     background-color: #F26C3A;
 }
 
