@@ -157,8 +157,18 @@ td {
     color: red;
 }
 
-.tabs {
+#tabs {
     background: transparent;
+    border-color: #F26C3A;
+}
+
+#tabs .ui-state-default {
+    border-color: #FCB59A;
+}
+
+#tabs .ui-state-active {
+    border-color: #F26C3A;
+    background-color: #F26C3A;
 }
 
 .diff {
@@ -197,10 +207,6 @@ td {
     float: left;
     margin: 10px;
     display: inline;
-}
-
-.gallery img {
-    border: 1px solid #F26C3A;
 }
 
 .summary {}

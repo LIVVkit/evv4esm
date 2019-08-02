@@ -3,5 +3,6 @@ include README.md
 
 graft evv4esm/resources
 graft evv4esm/extensions
+graft evv4esm/ensembles
 
 global-exclude *.py[co]

@@ -2,7 +2,7 @@
 ===============================================================================
 
 EVV is a python-based toolkit for extended verification and validation of Earth
-system models (ESMs). Currently, it provide a number test to determine if
+system models (ESMs). Currently, it provides a number tests to determine if
 modifications to an ESM is *climate changing.*  
   
   
@@ -18,10 +18,3 @@ Want to send us a private message?
 **Joseph H. Kennedy** 
 * github: @jhkennedy
 * email: <a href="mailto:kennedyjh@ornl.gov">kennedyjh [at] ornl.gov</a>
-
-**Katherine J. Evans** 
-* github: @kevans32
-* email: <a href="mailto:evanskj@ornl.gov">evanskj [at] ornl.gov</a>
-
-If you're emailing us, we recommend CC-ing all of us. 
-

@@ -29,5 +29,23 @@
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-__version_info__ = (0, 1, 1)
+__version_info__ = (0, 2, 0)
 __version__ = '.'.join(str(vi) for vi in __version_info__)
+
+PASS_COLOR = '#389933'
+L_PASS_COLOR = '#93DA90'
+
+FAIL_COLOR = '#BF3F46'
+L_FAIL_COLOR = '#E68388'
+
+pf_color_picker = {'Pass': PASS_COLOR, 'pass': PASS_COLOR,
+                   'Accept': PASS_COLOR, 'accept': PASS_COLOR,
+                   'Fail': FAIL_COLOR, 'fail': FAIL_COLOR,
+                   'Reject': FAIL_COLOR, 'reject': FAIL_COLOR}
+
+light_pf_color_picker = {'Pass': L_PASS_COLOR, 'pass': L_PASS_COLOR,
+                         'Accept': L_PASS_COLOR, 'accept': L_PASS_COLOR,
+                         PASS_COLOR: L_PASS_COLOR,
+                         'Fail': L_FAIL_COLOR, 'fail': L_FAIL_COLOR,
+                         'Reject': L_FAIL_COLOR, 'reject': L_FAIL_COLOR,
+                         FAIL_COLOR: L_FAIL_COLOR}
