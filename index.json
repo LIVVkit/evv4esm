@@ -2,23 +2,71 @@
     "Data": {
         "Elements": [
             {
-                "TableTitle": "Kolmogorov-Smirnov", 
+                "TableTitle": "Kolmogorov-Smirnov test", 
                 "Data": {
-                    "20180731_191347_qpalvb": {
+                    "mvk_zmconv_c0_ocn_0.045": {
                         "": {
-                            "Case": "20180731_191347_qpalvb", 
-                            "Variables Analyzed": 378, 
-                            "Critical Value": 13.0, 
-                            "Rejecting": 9, 
-                            "Ensembles": "identical"
+                            "Case": "mvk_zmconv_c0_ocn_0.045", 
+                            "Ensembles": "statistically different", 
+                            "Rejecting": 78, 
+                            "Variables analyzed": 118, 
+                            "Test status": "fail", 
+                            "Critical value": 13.0
                         }
                     }
                 }, 
                 "Type": "ValSummary", 
                 "Headers": [
-                    "Variables Analyzed", 
+                    "Test status", 
+                    "Variables analyzed", 
                     "Rejecting", 
-                    "Critical Value", 
+                    "Critical value", 
+                    "Ensembles"
+                ], 
+                "Title": "Validation"
+            }, 
+            {
+                "TableTitle": "Perturbation growth test", 
+                "Data": {
+                    "pge_zmconv_c0_ocn_0.045": {
+                        "": {
+                            "Case": "pge_zmconv_c0_ocn_0.045", 
+                            "Test status": "fail", 
+                            "T test (t, p)": "(-31.094, 0.000)", 
+                            "Ensembles": "statistically different", 
+                            "Null hypothesis": "reject"
+                        }
+                    }
+                }, 
+                "Type": "ValSummary", 
+                "Headers": [
+                    "Test status", 
+                    "Null hypothesis", 
+                    "T test (t, p)", 
+                    "Ensembles"
+                ], 
+                "Title": "Validation"
+            }, 
+            {
+                "TableTitle": "Time step convergence test", 
+                "Data": {
+                    "tsc_zmconv_c0_ocn_0.045": {
+                        "": {
+                            "Case": "tsc_zmconv_c0_ocn_0.045", 
+                            "Land": "Fail", 
+                            "Ensembles": "statistically different", 
+                            "Global": "Fail", 
+                            "Ocean": "Fail", 
+                            "Test status": "Fail"
+                        }
+                    }
+                }, 
+                "Type": "ValSummary", 
+                "Headers": [
+                    "Test status", 
+                    "Global", 
+                    "Land", 
+                    "Ocean", 
                     "Ensembles"
                 ], 
                 "Title": "Validation"
