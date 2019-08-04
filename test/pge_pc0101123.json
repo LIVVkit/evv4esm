@@ -1,9 +1,9 @@
 {
-    "pge_test_local": {
+    "pge_zmconv_c0_ocn_0.045": {
         "module": "/home/fjk/Documents/Code/EVV/evv/evv4esm/extensions/pg.py",
-        "test-case": "PGN_P1x1.ne4_ne4.FC5AV1C-L.cori-knl_intel.C.20190507_092713_6d4p10",
         "test-name": "Test",
-        "test-dir": "/home/fjk/Documents/Data/E3SM/PGN/PGN_P1x1.ne4_ne4.FC5AV1C-L.cori-knl_intel.C.20190507_092713_6d4p10/run",
+        "test-case": "PGN_P1x1.ne4_ne4.FC5AV1C-L.cori-knl_intel.C.20190801_154712_6vlllj",
+        "test-dir": "/home/fjk/Documents/Data/E3SM/PGN/PGN_P1x1.ne4_ne4.FC5AV1C-L.cori-knl_intel.C.20190801_154712_6vlllj/run",
         "ref-name": "Baseline",
         "ref-dir": "/home/fjk/Documents/Data/E3SM/PGN/baseline",
         "variables": ["topphysbc",
