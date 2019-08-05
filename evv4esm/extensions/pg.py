@@ -336,7 +336,8 @@ def main(args):
                'end of the time step and the orange circle is the {test} ensemble mean. ' \
                'The orange box highlights the threshold values corresponding to the ' \
                'critical P {crit}% in the two-sided t-test. For the test to pass, ' \
-               'the orange box must overlap the blue line. Note: The orange box may appear ' \
+               'the orange box must overlap the blue line. Note: Due to the logscale, ' \
+               'the orange box may not appear thicker than the line or may appear ' \
                'exceptionally large as  these  values  are very close to zero and ' \
                'the mean ± Tc*σ/√N range may cross zero, where Tc is the  critical ' \
                't-test value, σ is the ensemble standard deviation, N is the size ' \

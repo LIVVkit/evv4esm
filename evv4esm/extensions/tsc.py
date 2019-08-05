@@ -70,7 +70,7 @@ from livvkit.util.LIVVDict import LIVVDict
 
 from evv4esm.ensembles import e3sm
 from evv4esm.utils import bib2html
-from evv4esm import pf_color_picker, light_pf_color_picker
+from evv4esm import pf_color_picker, light_pf_color_picker, human_color_names
 
 
 def parse_args(args=None):
@@ -380,9 +380,9 @@ def plot_pmin(args, ttest, img_file):
 
     img_caption = 'The minimum P value of all variables in both domains (land and ' \
                   'ocean) as a function of model integration time plotted with ' \
-                  'a logarithmic y-scale. The dashed grey line indicates the' \
-                  'threshold for assigning an overall "pass" or "fail" to a test' \
-                  'ensemble, see Wan et al. (2017) eqn. 8.'
+                  'a logarithmic y-scale. The dashed grey line indicates the ' \
+                  'threshold for assigning an overall pass or fail to a test ' \
+                  'ensemble; see Wan et al. (2017) eqn. 8.'
     img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
     img = el.image('Timeline of P_{min}', img_caption, img_link, height=300)
     return img
@@ -446,14 +446,16 @@ def boxplot_delta_rmsd(args, delta_rmsd, null_hypothesis, img_file_format):
         plt.savefig(img_file, bbox_extra_artists=[st], bbox_inches='tight')
         plt.close(fig)
 
-        img_caption = 'Boxplot of ensemble ΔRMSD at t={}s, where the dots show ' \
+        img_caption = 'Boxplot of ensemble ΔRMSD at t={time}s, where the dots show ' \
                       'the ensemble mean, ther verical lines show the ensemble median, ' \
                       'the filled boxes cover the interquartile range (IQR), and ' \
                       'the whiskers cover 1.5*IQR. All values here have been ' \
                       'normalized by the mean RMSD of the reference ensemble. ' \
-                      'Red and blue indicate fail and pass, respectively, ' \
+                      '{cfail} and {cpass} indicate fail and pass, respectively, ' \
                       'according to the criterion described in ' \
-                      'Wan et al. (2017), eq. 6.'.format(time)
+                      'Wan et al. (2017), eq. 6.'.format(time=time,
+                                                         cfail=human_color_names['fail'][0].capitalize(),
+                                                         cpass=human_color_names['pass'][0])
         img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
         img_list.append(el.image('Boxplot of normalized ensemble ΔRMSD at {}s'.format(time),
                                  img_caption, img_link, height=300))
@@ -555,16 +557,19 @@ def errorbars_delta_rmsd(args, delta_rmsd, null_hypothesis, img_file_format):
         plt.savefig(img_file, bbox_extra_artists=[st], bbox_inches='tight')
         plt.close(fig)
 
-        img_caption = 'Ensemble-mean ΔRMSD at t={}s (dots) and the ±2σ/√N range of ' \
+        img_caption = 'Ensemble-mean ΔRMSD at t={time}s (dots) and the ±2σ/√N range of ' \
                       'the mean (dark filled boxes), where σ denotes the standard ' \
                       'deviation, N the ensemble size, and σ/√N is the t-test scaling ' \
                       'parameter. The left end of the light filled boxes shows the ' \
-                      'threshold value corresponding to the critical P {}% in the ' \
+                      'threshold value corresponding to the critical P {pthres}% in the ' \
                       'one-sided t-test. All values here have been ' \
                       'normalized by the mean RMSD of the reference ensemble. ' \
-                      'Red and blue indicate fail and pass, respectively, ' \
+                      '{cfail} and {cpass} indicate fail and pass, respectively, ' \
                       'according to the criterion described in ' \
-                      'Wan et al. (2017), eq. 6.'.format(time, args.p_threshold * 100)
+                      'Wan et al. (2017), eq. 6.'.format(time=time,
+                                                         pthres=args.p_threshold * 100,
+                                                         cfail=human_color_names['fail'][0].capitalize(),
+                                                         cpass=human_color_names['pass'][0])
         img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
         img_list.append(el.image('Distribution of the ensemble ΔRMSD at {}s'.format(time),
                                  img_caption, img_link, height=300))

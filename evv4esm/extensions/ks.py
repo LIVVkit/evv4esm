@@ -64,6 +64,7 @@ from livvkit.util.LIVVDict import LIVVDict
 from evv4esm.ensembles import e3sm
 from evv4esm.ensembles.tools import monthly_to_annual_avg, prob_plot
 from evv4esm.utils import bib2html
+from evv4esm import human_color_names
 
 
 def variable_set(name):
@@ -296,12 +297,16 @@ def main(args):
         prob_plot(annuals_1, annuals_2, 20, img_file, test_name=args.test_case, ref_name=args.ref_case,
                   pf=details[var]['h0'])
         
-        img_desc = 'Mean annual global average of {} for <em>{}</em> is {:.3e} ' \
-                   'and for <em>{}</em> is {:.3e}'.format(var,
-                                                          args.test_case,
-                                                          details[var]['mean (test case, ref. case)'][0],
-                                                          args.ref_case,
-                                                          details[var]['mean (test case, ref. case)'][1])
+        img_desc = 'Mean annual global average of {var} for <em>{testcase}</em> ' \
+                   'is {testmean:.3e} and for <em>{refcase}</em> is {refmean:.3e}. ' \
+                   'Pass (fail) is indicated by {cpass} ({cfail}) coloring of the ' \
+                   'plot markers and bars.'.format(var=var,
+                                                  testcase=args.test_case,
+                                                  testmean=details[var]['mean (test case, ref. case)'][0],
+                                                  refcase=args.ref_case,
+                                                  refmean=details[var]['mean (test case, ref. case)'][1],
+                                                  cfail=human_color_names['fail'][0],
+                                                  cpass=human_color_names['pass'][0])
 
         img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
         img_list.append(el.image(var, img_desc, img_link))

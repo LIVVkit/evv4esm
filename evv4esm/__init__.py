@@ -38,6 +38,13 @@ L_PASS_COLOR = '#93DA90'
 FAIL_COLOR = '#BF3F46'
 L_FAIL_COLOR = '#E68388'
 
+human_color_names = {'pass': ('green', 'light green'),
+                     PASS_COLOR: 'green',
+                     L_PASS_COLOR: 'light green',
+                     'fail': ('red', 'light red'),
+                     FAIL_COLOR: 'red',
+                     L_FAIL_COLOR: 'light red'}
+
 pf_color_picker = {'Pass': PASS_COLOR, 'pass': PASS_COLOR,
                    'Accept': PASS_COLOR, 'accept': PASS_COLOR,
                    'Fail': FAIL_COLOR, 'fail': FAIL_COLOR,
