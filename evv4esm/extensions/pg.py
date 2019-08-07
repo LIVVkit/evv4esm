@@ -157,13 +157,6 @@ def variables_rmse(ifile_test, ifile_cntl, var_list, var_pefix=''):
 
     """
 
-    # ------------------ARGS-------------------------
-    # ifile_test: path of test file
-    # ifile_cntl: path of control file
-    # var_list  : List of all variables
-    # var_pefix: Prefix for var_list (e.g. t_, t_ qv_ etc.)
-    # -----------------------------------------------
-
     with Dataset(ifile_test) as ftest, Dataset(ifile_cntl) as fcntl:
         lat = ftest.variables['lat']
         lon = ftest.variables['lon']
@@ -211,7 +204,7 @@ def main(args):
     # for test cases (new environment etc.)
     # logger.debug("PGN_INFO: Test case comparison...")
 
-    cond_rmse = {}
+    rmse_prototype = {}
     for icond in range(args.ninit):
         prt_rmse = {}
         for iprt, prt_name in enumerate(args.perturbations):
@@ -230,9 +223,9 @@ def main(args):
 
             prt_rmse[prt_name] = variables_rmse(ifile_test, ifile_ctrl, args.variables, 't_')
 
-        cond_rmse[icond] = pd.concat(prt_rmse)
+        rmse_prototype[icond] = pd.concat(prt_rmse)
 
-    rmse = pd.concat(cond_rmse)
+    rmse = pd.concat(rmse_prototype)
     comp_rmse = np.reshape(rmse.RMSE.values, (args.ninit, nprt-1, nvar))
 
     rmse_writer(os.path.join(args.test_dir, 'comp_cld.nc'),
