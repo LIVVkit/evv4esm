@@ -130,9 +130,11 @@ def rmse_writer(file_name, rmse, perturbation_names, perturbation_variables, ini
         nc_rmse = nc.createVariable('rmse', 'f8', ('ninit', 'nprt_m1', 'nvars'))
 
         # NOTE: Assignment to netcdf4 variable length string array can be done
-        #       via numpy arrays, or in a for loop using integer indices
-        nc_perturbation[:] = np.array(perturbation_names)
-        nc_variables[:] = np.array(perturbation_variables)
+        #       via numpy arrays, or in a for loop using integer indices.
+        # NOTE: Numpy arrays can't be created from a generator for some dumb reason,
+        #       so protect with list
+        nc_perturbation[:] = np.array(list(perturbation_names))
+        nc_variables[:] = np.array(list(perturbation_variables))
         nc_rmse[:] = rmse[:]
 
         for icond in range(0, ninit):
@@ -233,7 +235,7 @@ def main(args):
 
     details = OrderedDict()
     with Dataset(os.path.join(args.ref_dir, args.pge_cld)) as ref_cld:
-        ref_dims = ref_cld.variables['cld_rmse'].shape
+        ref_dims = ref_cld.variables['rmse'].shape
         cmp_dims = (args.ninit, nprt - 1, nvar)
         try:
             assert(ref_dims == cmp_dims)
@@ -243,7 +245,7 @@ def main(args):
                     '    CLD:{}  COMP:{}'.format(ref_dims, cmp_dims))
             six.raise_from(be, e)
 
-        ref_rmse = ref_cld.variables['cld_rmse'][...]
+        ref_rmse = ref_cld.variables['rmse'][...]
         details['ref. data'] = ref_rmse
 
     pge_ends_cld = ref_rmse[:, :, -1]
