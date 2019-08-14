@@ -2,9 +2,9 @@
   "tsc_zmconv_c0_ocn_0.045": {
     "module": "/home/fjk/Documents/Code/EVV/evv/evv4esm/extensions/tsc.py",
     "test-case": "Test",
-    "test-dir": "/home/fjk/Documents/Data/E3SM/TSC/TSC.ne4_ne4.FC5AV1C-L.cori-knl_intel.C.20190802_105217_a3t36f/run",
+    "test-dir": "/home/fjk/Documents/Data/E3SM/TSC/TSC.ne4_ne4.FC5AV1C-L.cori-knl_intel.G.20190813_062420_6xgbnk/run",
     "ref-case": "Reference",
-    "ref-dir": "/home/fjk/Documents/Data/E3SM/TSC/TSC.ne4_ne4.FC5AV1C-L.cori-knl_intel.G.20190710_143749_i2r1c6/run",
+    "ref-dir": "/home/fjk/Documents/Data/E3SM/baselines/TSC.ne4_ne4.FC5AV1C-L.cori-knl_intel",
     "time-slice": [10, 600],
     "inspect-times": [300, 450, 600],
     "variables": ["T", "Q", "V", "CLDLIQ", "CLDICE", "NUMLIQ", "NUMICE", "num_a1", "num_a2", "num_a3"],
