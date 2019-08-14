@@ -2,10 +2,10 @@
     "pge_zmconv_c0_ocn_0.045": {
         "module": "/home/fjk/Documents/Code/EVV/evv/evv4esm/extensions/pg.py",
         "test-name": "Test",
-        "test-case": "PGN_P1x1.ne4_ne4.FC5AV1C-L.cori-knl_intel.C.20190801_154712_6vlllj",
-        "test-dir": "/home/fjk/Documents/Data/E3SM/PGN/PGN_P1x1.ne4_ne4.FC5AV1C-L.cori-knl_intel.C.20190801_154712_6vlllj/run",
+        "test-case": "PGN_P1x1.ne4_ne4.FC5AV1C-L.cori-knl_intel.C.20190808_131552_4uv1o0",
+        "test-dir": "/home/fjk/Documents/Data/E3SM/PGN/PGN_P1x1.ne4_ne4.FC5AV1C-L.cori-knl_intel.C.20190808_131552_4uv1o0/run",
         "ref-name": "Baseline",
-        "ref-dir": "/home/fjk/Documents/Data/E3SM/PGN/baseline",
+        "ref-dir": "/home/fjk/Documents/Data/E3SM/baselines/PGN_P1x1.ne4_ne4.FC5AV1C-L.cori-knl_intel",
         "variables": ["topphysbc",
                       "chkenergyfix",
                       "dadadj",
