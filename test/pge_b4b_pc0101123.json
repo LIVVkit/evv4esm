@@ -1,5 +1,5 @@
 {
-    "pge_zmconv_c0_ocn_0.045": {
+    "pge_bit-for-bit": {
         "module": "/home/fjk/Documents/Code/EVV/evv/evv4esm/extensions/pg.py",
         "test-name": "Test",
         "test-case": "PGN_P1x1.ne4_ne4.FC5AV1C-L.cori-knl_intel.C.20190808_131552_4uv1o0",

@@ -1,0 +1,12 @@
+{
+  "mvk_bit-for-bit": {
+    "module": "/home/fjk/Documents/Code/EVV/evv/evv4esm/extensions/ks.py",
+    "test-case": "Test",
+    "test-dir": "/home/fjk/Documents/Data/E3SM/MVK/MVK_PL.ne4_ne4.FC5AV1C-04P2.cori-knl_intel.C.20190814_083745_svs62y/run",
+    "ref-case": "Reference",
+    "ref-dir": "/home/fjk/Documents/Data/E3SM/baselines/MVK_PL.ne4_ne4.FC5AV1C-04P2.cori-knl_intel",
+    "var-set": "default",
+    "ninst": 20,
+    "critical": 13
+  }
+}
