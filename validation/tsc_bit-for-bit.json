@@ -1,0 +1,134 @@
+{
+    "Data": {
+        "Tabs": [
+            {
+                "Elements": [
+                    {
+                        "Data": [
+                            {
+                                "Plot File": "tsc_bit-for-bit/failing_timeline.png", 
+                                "Height": 300, 
+                                "Type": "Image", 
+                                "Description": "The number of failing variables across both domains (land and ocean) as a function of model integration time.", 
+                                "Title": "Timeline of failing variables"
+                            }, 
+                            {
+                                "Plot File": "tsc_bit-for-bit/pmin_timeline.png", 
+                                "Height": 300, 
+                                "Type": "Image", 
+                                "Description": "The minimum P value of all variables in both domains (land and ocean) as a function of model integration time plotted with a logarithmic y-scale. The dashed grey line indicates the threshold for assigning an overall pass or fail to a test ensemble; see Wan et al. (2017) eqn. 8.", 
+                                "Title": "Timeline of P_{min}"
+                            }
+                        ], 
+                        "Type": "Gallery", 
+                        "Title": "Time step convergence"
+                    }
+                ], 
+                "Type": "Tab", 
+                "Title": "Figures"
+            }, 
+            {
+                "Elements": [
+                    {
+                        "TableTitle": "Analyzed variables", 
+                        "Data": {
+                            "Time: ALL": {
+                                "Vars: ALL": {
+                                    "T test (t, P)": "(-, 1)", 
+                                    "Null hypothesis": "Accept"
+                                }
+                            }
+                        }, 
+                        "Type": "V-H Table", 
+                        "Headers": [
+                            "Null hypothesis", 
+                            "T test (t, P)"
+                        ], 
+                        "Title": "Validation"
+                    }
+                ], 
+                "Type": "Tab", 
+                "Title": "Global_details"
+            }, 
+            {
+                "Elements": [
+                    {
+                        "TableTitle": "Analyzed variables", 
+                        "Data": {
+                            "Time: ALL": {
+                                "Vars: ALL": {
+                                    "T test (t, P)": "(-, 1)", 
+                                    "Null hypothesis": "Accept"
+                                }
+                            }
+                        }, 
+                        "Type": "V-H Table", 
+                        "Headers": [
+                            "Null hypothesis", 
+                            "T test (t, P)"
+                        ], 
+                        "Title": "Validation"
+                    }
+                ], 
+                "Type": "Tab", 
+                "Title": "Land_details"
+            }, 
+            {
+                "Elements": [
+                    {
+                        "TableTitle": "Analyzed variables", 
+                        "Data": {
+                            "Time: ALL": {
+                                "Vars: ALL": {
+                                    "T test (t, P)": "(-, 1)", 
+                                    "Null hypothesis": "Accept"
+                                }
+                            }
+                        }, 
+                        "Type": "V-H Table", 
+                        "Headers": [
+                            "Null hypothesis", 
+                            "T test (t, P)"
+                        ], 
+                        "Title": "Validation"
+                    }
+                ], 
+                "Type": "Tab", 
+                "Title": "Ocean_details"
+            }, 
+            {
+                "Elements": [
+                    {
+                        "Data": "<div class=\"bibliography\"><dl><dt>1</dt> <dd>H.&nbsp;Wan, K.&nbsp;Zhang, P.&nbsp;J. Rasch, B.&nbsp;Singh, X.&nbsp;Chen, and J.&nbsp;Edwards. A new and inexpensive non-bit-for-bit solution reproducibility test based on time step\u00a0convergence (tsc1.0). <em>Geoscientific Model Development</em>, 10(2):537\u2013552, 2017. URL: <a href=\"https://www.geosci-model-dev.net/10/537/2017/\">https://www.geosci-model-dev.net/10/537/2017/</a>, <a href=\"https://doi.org/10.5194/gmd-10-537-2017\">doi:10.5194/gmd-10-537-2017</a>.</dd> </dl></div>", 
+                        "Type": "HTML"
+                    }
+                ], 
+                "Type": "Tab", 
+                "Title": "References"
+            }
+        ], 
+        "Elements": [
+            {
+                "Headers": [
+                    "Test status", 
+                    "Global", 
+                    "Land", 
+                    "Ocean", 
+                    "Ensembles"
+                ], 
+                "Type": "Table", 
+                "Data": {
+                    "Test status": "Pass", 
+                    "Land": "bit-for-bit", 
+                    "Global": "bit-for-bit", 
+                    "Ensembles": "statistically identical", 
+                    "Ocean": "bit-for-bit"
+                }, 
+                "Title": "Results"
+            }
+        ]
+    }, 
+    "Type": "Page", 
+    "Description": "The Time Step Convergence Test:\nThis tests the null hypothesis that the convergence of the time stepping error\nfor a set of key atmospheric variables is the same for a reference ensemble and\na test ensemble. Both the reference and test ensemble are generated with a\ntwo-second time step, and for each variable the RMSD between each ensemble and\na truth ensemble, generated with a one-second time step, is calculated. RMSD is\ncalculated globally and over two domains, the land and the ocean. The land/ocean\ndomains contain just the atmosphere points that are over land/ocean cells.<br><br>At each 10 second interval during the 10 minute long simulations, the difference\nin the reference and test RMSDs for each variable, each ensemble member, and each\ndomain are calculated and these \u0394RMSDs should be zero for identical climates. A\none sided (due to self convergence) Student's T Test is used to test the null\nhypothesis that the ensemble mean \u0394RMSD is statistically zero at the 99.5%\nconfidence level. A rejection of the null hypothesis (mean \u0394RMSD is not\nstatistically zero) at any time step for any variable will cause this test to\nfail.\n", 
+    "Title": "tsc_bit-for-bit"
+}

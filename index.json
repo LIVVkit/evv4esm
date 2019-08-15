@@ -2,73 +2,102 @@
     "Data": {
         "Elements": [
             {
-                "TableTitle": "Kolmogorov-Smirnov test", 
+                "TableTitle": "Kolmogorov-Smirnov test",
                 "Data": {
-                    "mvk_zmconv_c0_ocn_0.045": {
+                    "mvk_bit-for-bit": {
                         "": {
-                            "Case": "mvk_zmconv_c0_ocn_0.045", 
-                            "Ensembles": "statistically different", 
-                            "Rejecting": 78, 
-                            "Variables analyzed": 118, 
-                            "Test status": "fail", 
+                            "Case": "mvk_bit-for-bit",
+                            "Ensembles": "statistically identical",
+                            "Rejecting": 0,
+                            "Variables analyzed": 118,
+                            "Test status": "pass",
+                            "Critical value": 13.0
+                        }
+                    },
+                    "mvk_zmconv_c0_ocn_045": {
+                        "": {
+                            "Case": "mvk_zmconv_c0_ocn_045",
+                            "Ensembles": "statistically different",
+                            "Rejecting": 94,
+                            "Variables analyzed": 118,
+                            "Test status": "fail",
                             "Critical value": 13.0
                         }
                     }
-                }, 
-                "Type": "ValSummary", 
+                },
+                "Type": "ValSummary",
                 "Headers": [
-                    "Test status", 
-                    "Variables analyzed", 
-                    "Rejecting", 
-                    "Critical value", 
+                    "Test status",
+                    "Variables analyzed",
+                    "Rejecting",
+                    "Critical value",
                     "Ensembles"
-                ], 
+                ],
                 "Title": "Validation"
-            }, 
+            },
             {
-                "TableTitle": "Perturbation growth test", 
+                "TableTitle": "Perturbation growth test",
                 "Data": {
-                    "pge_zmconv_c0_ocn_0.045": {
+                    "pge_bit-for-bit": {
                         "": {
-                            "Case": "pge_zmconv_c0_ocn_0.045", 
-                            "Test status": "fail", 
-                            "T test (t, p)": "(-31.094, 0.000)", 
-                            "Ensembles": "statistically different", 
+                            "Case": "pge_bit-for-bit",
+                            "Test status": "pass",
+                            "T test (t, p)": "(0.000, 1.000)",
+                            "Ensembles": "statistically identical",
+                            "Null hypothesis": "accept"
+                        }
+                    },
+                    "pge_zmconv_c0_ocn_045": {
+                        "": {
+                            "Case": "pge_zmconv_c0_ocn_045",
+                            "Test status": "fail",
+                            "T test (t, p)": "(-31.721, 0.000)",
+                            "Ensembles": "statistically different",
                             "Null hypothesis": "reject"
                         }
                     }
-                }, 
-                "Type": "ValSummary", 
+                },
+                "Type": "ValSummary",
                 "Headers": [
-                    "Test status", 
-                    "Null hypothesis", 
-                    "T test (t, p)", 
+                    "Test status",
+                    "Null hypothesis",
+                    "T test (t, p)",
                     "Ensembles"
-                ], 
+                ],
                 "Title": "Validation"
-            }, 
+            },
             {
-                "TableTitle": "Time step convergence test", 
+                "TableTitle": "Time step convergence test",
                 "Data": {
-                    "tsc_zmconv_c0_ocn_0.045": {
+                    "tsc_bit-for-bit": {
                         "": {
-                            "Case": "tsc_zmconv_c0_ocn_0.045", 
-                            "Land": "Fail", 
-                            "Ensembles": "statistically different", 
-                            "Global": "Fail", 
-                            "Ocean": "Fail", 
+                            "Case": "tsc_bit-for-bit",
+                            "Land": "bit-for-bit",
+                            "Ensembles": "statistically identical",
+                            "Global": "bit-for-bit",
+                            "Ocean": "bit-for-bit",
+                            "Test status": "Pass"
+                        }
+                    },
+                    "tsc_zmconv_c0_ocn_045": {
+                        "": {
+                            "Case": "tsc_zmconv_c0_ocn_045",
+                            "Land": "Fail",
+                            "Ensembles": "statistically different",
+                            "Global": "Fail",
+                            "Ocean": "Fail",
                             "Test status": "Fail"
                         }
                     }
-                }, 
-                "Type": "ValSummary", 
+                },
+                "Type": "ValSummary",
                 "Headers": [
-                    "Test status", 
-                    "Global", 
-                    "Land", 
-                    "Ocean", 
+                    "Test status",
+                    "Global",
+                    "Land",
+                    "Ocean",
                     "Ensembles"
-                ], 
+                ],
                 "Title": "Validation"
             }
         ]
