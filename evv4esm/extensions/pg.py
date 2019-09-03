@@ -130,9 +130,11 @@ def rmse_writer(file_name, rmse, perturbation_names, perturbation_variables, ini
         nc_rmse = nc.createVariable('rmse', 'f8', ('ninit', 'nprt_m1', 'nvars'))
 
         # NOTE: Assignment to netcdf4 variable length string array can be done
-        #       via numpy arrays, or in a for loop using integer indices
-        nc_perturbation[:] = np.array(perturbation_names)
-        nc_variables[:] = np.array(perturbation_variables)
+        #       via numpy arrays, or in a for loop using integer indices.
+        # NOTE: Numpy arrays can't be created from a generator for some dumb reason,
+        #       so protect with list
+        nc_perturbation[:] = np.array(list(perturbation_names))
+        nc_variables[:] = np.array(list(perturbation_variables))
         nc_rmse[:] = rmse[:]
 
         for icond in range(0, ninit):
@@ -156,13 +158,6 @@ def variables_rmse(ifile_test, ifile_cntl, var_list, var_pefix=''):
             difference details between the perturbed and control simulation
 
     """
-
-    # ------------------ARGS-------------------------
-    # ifile_test: path of test file
-    # ifile_cntl: path of control file
-    # var_list  : List of all variables
-    # var_pefix: Prefix for var_list (e.g. t_, t_ qv_ etc.)
-    # -----------------------------------------------
 
     with Dataset(ifile_test) as ftest, Dataset(ifile_cntl) as fcntl:
         lat = ftest.variables['lat']
@@ -211,7 +206,7 @@ def main(args):
     # for test cases (new environment etc.)
     # logger.debug("PGN_INFO: Test case comparison...")
 
-    cond_rmse = {}
+    rmse_prototype = {}
     for icond in range(args.ninit):
         prt_rmse = {}
         for iprt, prt_name in enumerate(args.perturbations):
@@ -230,9 +225,9 @@ def main(args):
 
             prt_rmse[prt_name] = variables_rmse(ifile_test, ifile_ctrl, args.variables, 't_')
 
-        cond_rmse[icond] = pd.concat(prt_rmse)
+        rmse_prototype[icond] = pd.concat(prt_rmse)
 
-    rmse = pd.concat(cond_rmse)
+    rmse = pd.concat(rmse_prototype)
     comp_rmse = np.reshape(rmse.RMSE.values, (args.ninit, nprt-1, nvar))
 
     rmse_writer(os.path.join(args.test_dir, 'comp_cld.nc'),
@@ -240,7 +235,7 @@ def main(args):
 
     details = OrderedDict()
     with Dataset(os.path.join(args.ref_dir, args.pge_cld)) as ref_cld:
-        ref_dims = ref_cld.variables['cld_rmse'].shape
+        ref_dims = ref_cld.variables['rmse'].shape
         cmp_dims = (args.ninit, nprt - 1, nvar)
         try:
             assert(ref_dims == cmp_dims)
@@ -250,7 +245,7 @@ def main(args):
                     '    CLD:{}  COMP:{}'.format(ref_dims, cmp_dims))
             six.raise_from(be, e)
 
-        ref_rmse = ref_cld.variables['cld_rmse'][...]
+        ref_rmse = ref_cld.variables['rmse'][...]
         details['ref. data'] = ref_rmse
 
     pge_ends_cld = ref_rmse[:, :, -1]
@@ -336,7 +331,8 @@ def main(args):
                'end of the time step and the orange circle is the {test} ensemble mean. ' \
                'The orange box highlights the threshold values corresponding to the ' \
                'critical P {crit}% in the two-sided t-test. For the test to pass, ' \
-               'the orange box must overlap the blue line. Note: The orange box may appear ' \
+               'the orange box must overlap the blue line. Note: Due to the logscale, ' \
+               'the orange box may not appear thicker than the line or may appear ' \
                'exceptionally large as  these  values  are very close to zero and ' \
                'the mean ± Tc*σ/√N range may cross zero, where Tc is the  critical ' \
                't-test value, σ is the ensemble standard deviation, N is the size ' \
