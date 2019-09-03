@@ -108,6 +108,10 @@ function drawContent() {
     // Load the data and add header information
     var verType = window.location.href.substr(
             window.location.href.lastIndexOf("/")+1).split("#")[0].replace(".html", "");
+    // Assume index.html if empty page name
+    if (verType == "") {
+        verType = "index";
+    }
     var data = loadJSON('./' + verType + ".json");
     var html = "<div id=" + data["Title"] + ">";
     if (data["Title"] != "Summary") {
