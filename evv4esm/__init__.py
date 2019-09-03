@@ -56,3 +56,8 @@ light_pf_color_picker = {'Pass': L_PASS_COLOR, 'pass': L_PASS_COLOR,
                          'Fail': L_FAIL_COLOR, 'fail': L_FAIL_COLOR,
                          'Reject': L_FAIL_COLOR, 'reject': L_FAIL_COLOR,
                          FAIL_COLOR: L_FAIL_COLOR}
+
+
+class EVVException(Exception):
+    """Base class for EVV exceptions"""
+    pass

@@ -64,7 +64,7 @@ from livvkit.util.LIVVDict import LIVVDict
 from evv4esm.ensembles import e3sm
 from evv4esm.ensembles.tools import monthly_to_annual_avg, prob_plot
 from evv4esm.utils import bib2html
-from evv4esm import human_color_names
+from evv4esm import human_color_names, EVVException
 
 
 def variable_set(name):
@@ -202,6 +202,11 @@ def case_files(args):
     f_sets = {key1: e3sm.component_monthly_files(args.test_dir, 'cam', args.ninst),
               key2: e3sm.component_monthly_files(args.ref_dir, 'cam', args.ninst)}
 
+    for key in f_sets:
+        # Require case files for at least the last 12 months.
+        if any(map(lambda x: x == [], f_sets[key].values())[-12:]):
+            raise EVVException('Could not find all the required case files for case: {}'.format(key))
+
     return f_sets, key1, key2
 
 
@@ -264,6 +269,8 @@ def main(args):
     test_set = set(monthly_avgs[monthly_avgs.case == args.test_case].variable.unique())
     ref_set = set(monthly_avgs[monthly_avgs.case == args.ref_case].variable.unique())
     common_vars = list(test_set & ref_set)
+    if not common_vars:
+        raise EVVException('No common variables between {} and {} to analyze!'.format(args.test_case, args.ref_case))
 
     img_list = []
     details = LIVVDict()
