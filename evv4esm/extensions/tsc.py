@@ -70,7 +70,7 @@ from livvkit.util.LIVVDict import LIVVDict
 
 from evv4esm.ensembles import e3sm
 from evv4esm.utils import bib2html
-from evv4esm import pf_color_picker, light_pf_color_picker
+from evv4esm import pf_color_picker, light_pf_color_picker, human_color_names
 
 
 def parse_args(args=None):
@@ -163,7 +163,7 @@ def main(args):
         args.test_case += '1'
         args.ref_case += '2'
 
-    file_search_glob = '{d}/*.cam_????.h0.0001-01-01-?????.nc.{s}'
+    file_search_glob = '{d}/*cam_????.h0.0001-01-01-?????.nc.{s}'
     truth_ens = {instance: list(files) for instance, files in groupby(
             sorted(glob.glob(file_search_glob.format(d=args.ref_dir, s='DT0001'))),
             key=lambda f: e3sm.component_file_instance('cam', f))}
@@ -243,59 +243,76 @@ def main(args):
                                 - delta_rmsd[test_columns]
     delta_rmsd.rename(columns={t: r for t, r in zip(test_columns, ref_columns)}, inplace=True)
 
-    # NOTE: This mess is because we want to "normalize" delta l2 by the mean
-    # _reference_ l2 for each instance and variable.
-    delta_rmsd[['norm_' + d for d in delta_columns]] = \
-        delta_rmsd.groupby(['instance', 'variable']).apply(
-            lambda g: g[delta_columns] / g[ref_columns].mean().values)
+    # check for bit-for-bit results; nothing to plot if true b/c everything will be zero
+    if not np.allclose(delta_rmsd[delta_columns], 0.0, atol=1e-12):
+        # NOTE: This mess is because we want to "normalize" delta l2 by the mean
+        # _reference_ l2 for each instance and variable.
+        delta_rmsd[['norm_' + d for d in delta_columns]] = \
+            delta_rmsd.groupby(['instance', 'variable']).apply(
+                lambda g: g[delta_columns] / g[ref_columns].mean().values)
 
-    testee = delta_rmsd.query(' seconds >= @args.time_slice[0] & seconds <= @args.time_slice[-1]')
-    ttest = testee.groupby(['seconds', 'variable']).agg(stats.ttest_1samp, popmean=0.0).drop(columns='instance')
+        testee = delta_rmsd.query(' seconds >= @args.time_slice[0] & seconds <= @args.time_slice[-1]')
+        ttest = testee.groupby(['seconds', 'variable']).agg(stats.ttest_1samp, popmean=0.0).drop(columns='instance')
 
-    # H0: enemble_mean_ΔRMSD_{t,var} is (statistically) zero and therefore, the simulations are identical
-    null_hypothesis = ttest.applymap(lambda x: 'Reject' if x[1] < args.p_threshold else 'Accept')
+        # H0: enemble_mean_ΔRMSD_{t,var} is (statistically) zero and therefore, the simulations are identical
+        null_hypothesis = ttest.applymap(lambda x: 'Reject' if x[1] < args.p_threshold else 'Accept')
 
-    domains = null_hypothesis.applymap(lambda x: x == 'Reject').any().transform(
-            lambda x: 'Fail' if x is True else 'Pass')
-    overall = 'Fail' if domains.apply(lambda x: x == 'Fail').any() else 'Pass'
+        domains = null_hypothesis.applymap(lambda x: x == 'Reject').any().transform(
+                lambda x: 'Fail' if x is True else 'Pass')
+        overall = 'Fail' if domains.apply(lambda x: x == 'Fail').any() else 'Pass'
 
-    ttest.reset_index(inplace=True)
-    null_hypothesis.reset_index(inplace=True)
+        ttest.reset_index(inplace=True)
+        null_hypothesis.reset_index(inplace=True)
 
-    land_data = LIVVDict()
-    ocean_data = LIVVDict()
-    global_data = LIVVDict()
-    for sec in ttest['seconds'].unique():
-        for var in ttest['variable'].unique():
-            sec_str = 'Time: {:03d}s'.format(sec)
-            t_data = ttest.loc[(ttest['seconds'] == sec) & (ttest['variable'] == var)]
-            h0_data = null_hypothesis.loc[(null_hypothesis['seconds'] == sec) & (null_hypothesis['variable'] == var)]
-            global_data[sec_str][var]['Null hypothesis'] = h0_data['delta_l2_global'].values[0]
-            land_data[sec_str][var]['Null hypothesis'] = h0_data['delta_l2_land'].values[0]
-            ocean_data[sec_str][var]['Null hypothesis'] = h0_data['delta_l2_ocean'].values[0]
+        land_data = LIVVDict()
+        ocean_data = LIVVDict()
+        global_data = LIVVDict()
+        for sec in ttest['seconds'].unique():
+            for var in ttest['variable'].unique():
+                sec_str = 'Time: {:03d}s'.format(sec)
+                t_data = ttest.loc[(ttest['seconds'] == sec) & (ttest['variable'] == var)]
+                h0_data = null_hypothesis.loc[(null_hypothesis['seconds'] == sec) & (null_hypothesis['variable'] == var)]
+                global_data[sec_str][var]['Null hypothesis'] = h0_data['delta_l2_global'].values[0]
+                land_data[sec_str][var]['Null hypothesis'] = h0_data['delta_l2_land'].values[0]
+                ocean_data[sec_str][var]['Null hypothesis'] = h0_data['delta_l2_ocean'].values[0]
 
-            global_data[sec_str][var]['T test (t, P)'] = '({:.3f}, {:.4f})'.format(*t_data['delta_l2_global'].values[0])
-            land_data[sec_str][var]['T test (t, P)'] = '({:.3f}, {:.4f})'.format(*t_data['delta_l2_land'].values[0])
-            ocean_data[sec_str][var]['T test (t, P)'] = '({:.3f}, {:.4f})'.format(*t_data['delta_l2_ocean'].values[0])
+                global_data[sec_str][var]['T test (t, P)'] = '({:.3f}, {:.4f})'.format(*t_data['delta_l2_global'].values[0])
+                land_data[sec_str][var]['T test (t, P)'] = '({:.3f}, {:.4f})'.format(*t_data['delta_l2_land'].values[0])
+                ocean_data[sec_str][var]['T test (t, P)'] = '({:.3f}, {:.4f})'.format(*t_data['delta_l2_ocean'].values[0])
 
-    details = {'ocean': ocean_data, 'land': land_data, 'global': global_data,
-               'domains': domains, 'overall': overall}
+        details = {'ocean': ocean_data, 'land': land_data, 'global': global_data,
+                   'domains': domains, 'overall': overall}
 
-    fail_timeline_img = os.path.relpath(os.path.join(args.img_dir, 'failing_timeline.png'), os.getcwd())
-    pmin_timeline_img = os.path.relpath(os.path.join(args.img_dir, 'pmin_timeline.png'), os.getcwd())
-    rmsd_img_format = os.path.relpath(os.path.join(args.img_dir, '{}_rmsd_{{}}s.png'), os.getcwd())
+        fail_timeline_img = os.path.relpath(os.path.join(args.img_dir, 'failing_timeline.png'), os.getcwd())
+        pmin_timeline_img = os.path.relpath(os.path.join(args.img_dir, 'pmin_timeline.png'), os.getcwd())
+        rmsd_img_format = os.path.relpath(os.path.join(args.img_dir, '{}_rmsd_{{}}s.png'), os.getcwd())
 
-    img_list = [plot_failing_variables(args, null_hypothesis, fail_timeline_img),
-                plot_pmin(args, ttest, pmin_timeline_img)]
-    e_img_list = errorbars_delta_rmsd(args, delta_rmsd[delta_rmsd['seconds'].isin(args.inspect_times)],
-                                      null_hypothesis, rmsd_img_format.format('distribution'))
+        img_list = [plot_failing_variables(args, null_hypothesis, fail_timeline_img),
+                    plot_pmin(args, ttest, pmin_timeline_img)]
+        e_img_list = errorbars_delta_rmsd(args, delta_rmsd[delta_rmsd['seconds'].isin(args.inspect_times)],
+                                          null_hypothesis, rmsd_img_format.format('distribution'))
 
-    b_img_list = boxplot_delta_rmsd(args, delta_rmsd[delta_rmsd['seconds'].isin(args.inspect_times)],
-                                    null_hypothesis, rmsd_img_format.format('boxplot'))
+        b_img_list = boxplot_delta_rmsd(args, delta_rmsd[delta_rmsd['seconds'].isin(args.inspect_times)],
+                                        null_hypothesis, rmsd_img_format.format('boxplot'))
 
-    img_list.extend([img for pair in zip(e_img_list, b_img_list) for img in pair])
+        img_list.extend([img for pair in zip(e_img_list, b_img_list) for img in pair])
+
+    else:
+        details = {'overall': 'Pass',
+                   'global': {'Time: ALL': {'Vars: ALL': {'Null hypothesis': 'Accept',
+                                                          'T test (t, P)': '(-, 1)'}}},
+                   'land': {'Time: ALL': {'Vars: ALL': {'Null hypothesis': 'Accept',
+                                                        'T test (t, P)': '(-, 1)'}}},
+                   'ocean':  {'Time: ALL': {'Vars: ALL': {'Null hypothesis': 'Accept',
+                                                          'T test (t, P)': '(-, 1)'}}},
+                   'domains': {
+                       'delta_l2_global': 'bit-for-bit',
+                       'delta_l2_land': 'bit-for-bit',
+                       'delta_l2_ocean': 'bit-for-bit',
+                   }}
+        img_list = plot_bit_for_bit(args)
+
     img_gallery = el.gallery('Time step convergence', img_list)
-
     return details, img_gallery
 
 
@@ -310,6 +327,67 @@ def pressure_layer_thickness(dataset):
 
     dp = np.expand_dims(da * p0, 1) + (np.expand_dims(db, 1) * np.expand_dims(ps, 0))
     return dp, ps
+
+
+def plot_bit_for_bit(args):
+    failing_img_file = os.path.relpath(os.path.join(args.img_dir, 'failing_timeline.png'), os.getcwd())
+    fig, ax = plt.subplots(figsize=(10, 8))
+    plt.rc('font', family='serif')
+
+    xx = np.arange(0, args.time_slice[1] + args.time_slice[0],  args.time_slice[0])
+    yy = np.zeros(xx.shape)
+    ax.plot(xx, yy, linestyle='-', marker='o', color=pf_color_picker.get('pass'))
+
+    ax.set_ybound(-1, 20)
+    ax.set_yticks(np.arange(0, 24, 4))
+    ax.set_yticks(np.arange(0, 21, 1), minor=True)
+
+    ax.set_ylabel('Number of failing variables')
+    ax.set_xlabel('Integration time (s)')
+
+    plt.tight_layout()
+    plt.savefig(failing_img_file, bbox_inches='tight')
+    plt.close(fig)
+
+    failing_img_caption = 'The number of failing variables across both domains (land and ' \
+                          'ocean) as a function of model integration time.'
+    failing_img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(failing_img_file))
+    failing_img = el.image('Timeline of failing variables', failing_img_caption, failing_img_link, height=300)
+
+    pmin_img_file = os.path.relpath(os.path.join(args.img_dir, 'pmin_timeline.png'), os.getcwd())
+    fig, ax = plt.subplots(figsize=(10, 8))
+    plt.rc('font', family='serif')
+
+    ax.semilogy(xx, yy + 1.0, linestyle='-', marker='o', color=pf_color_picker.get('pass'))
+
+    ax.plot(args.time_slice, [0.5, 0.5], 'k--')
+    ax.text(np.mean(args.time_slice), 10 ** -1, 'Fail', fontsize=15, color=pf_color_picker.get('fail'),
+            horizontalalignment='center')
+    ax.text(np.mean(args.time_slice), 0.5 * 10 ** 1, 'Pass', fontsize=15, color=pf_color_picker.get('pass'),
+            horizontalalignment='center')
+
+    ax.set_ybound(100, 10 ** -15)
+    locmaj = tkr.LogLocator(numticks=18)
+    ax.yaxis.set_major_locator(locmaj)
+    locmin = tkr.LogLocator(subs=(0.2, 0.4, 0.6, 0.8), numticks=18)
+    ax.yaxis.set_minor_locator(locmin)
+    ax.yaxis.set_minor_formatter(tkr.NullFormatter())
+    ax.set_ylabel('P_{min} (%)')
+    ax.set_xlabel('Integration time (s)')
+
+    plt.tight_layout()
+    plt.savefig(pmin_img_file, bbox_inches='tight')
+    plt.close(fig)
+
+    pmin_img_caption = 'The minimum P value of all variables in both domains (land and ' \
+                       'ocean) as a function of model integration time plotted with ' \
+                       'a logarithmic y-scale. The dashed grey line indicates the ' \
+                       'threshold for assigning an overall pass or fail to a test ' \
+                       'ensemble; see Wan et al. (2017) eqn. 8.'
+    pmin_img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(pmin_img_file))
+    pmin_img = el.image('Timeline of P_{min}', pmin_img_caption, pmin_img_link, height=300)
+
+    return [failing_img, pmin_img]
 
 
 def plot_failing_variables(args, null_hypothesis, img_file):
@@ -380,9 +458,9 @@ def plot_pmin(args, ttest, img_file):
 
     img_caption = 'The minimum P value of all variables in both domains (land and ' \
                   'ocean) as a function of model integration time plotted with ' \
-                  'a logarithmic y-scale. The dashed grey line indicates the' \
-                  'threshold for assigning an overall "pass" or "fail" to a test' \
-                  'ensemble, see Wan et al. (2017) eqn. 8.'
+                  'a logarithmic y-scale. The dashed grey line indicates the ' \
+                  'threshold for assigning an overall pass or fail to a test ' \
+                  'ensemble; see Wan et al. (2017) eqn. 8.'
     img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
     img = el.image('Timeline of P_{min}', img_caption, img_link, height=300)
     return img
@@ -446,14 +524,16 @@ def boxplot_delta_rmsd(args, delta_rmsd, null_hypothesis, img_file_format):
         plt.savefig(img_file, bbox_extra_artists=[st], bbox_inches='tight')
         plt.close(fig)
 
-        img_caption = 'Boxplot of ensemble ΔRMSD at t={}s, where the dots show ' \
+        img_caption = 'Boxplot of ensemble ΔRMSD at t={time}s, where the dots show ' \
                       'the ensemble mean, ther verical lines show the ensemble median, ' \
                       'the filled boxes cover the interquartile range (IQR), and ' \
                       'the whiskers cover 1.5*IQR. All values here have been ' \
                       'normalized by the mean RMSD of the reference ensemble. ' \
-                      'Red and blue indicate fail and pass, respectively, ' \
+                      '{cfail} and {cpass} indicate fail and pass, respectively, ' \
                       'according to the criterion described in ' \
-                      'Wan et al. (2017), eq. 6.'.format(time)
+                      'Wan et al. (2017), eq. 6.'.format(time=time,
+                                                         cfail=human_color_names['fail'][0].capitalize(),
+                                                         cpass=human_color_names['pass'][0])
         img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
         img_list.append(el.image('Boxplot of normalized ensemble ΔRMSD at {}s'.format(time),
                                  img_caption, img_link, height=300))
@@ -555,16 +635,19 @@ def errorbars_delta_rmsd(args, delta_rmsd, null_hypothesis, img_file_format):
         plt.savefig(img_file, bbox_extra_artists=[st], bbox_inches='tight')
         plt.close(fig)
 
-        img_caption = 'Ensemble-mean ΔRMSD at t={}s (dots) and the ±2σ/√N range of ' \
+        img_caption = 'Ensemble-mean ΔRMSD at t={time}s (dots) and the ±2σ/√N range of ' \
                       'the mean (dark filled boxes), where σ denotes the standard ' \
                       'deviation, N the ensemble size, and σ/√N is the t-test scaling ' \
                       'parameter. The left end of the light filled boxes shows the ' \
-                      'threshold value corresponding to the critical P {}% in the ' \
+                      'threshold value corresponding to the critical P {pthres}% in the ' \
                       'one-sided t-test. All values here have been ' \
                       'normalized by the mean RMSD of the reference ensemble. ' \
-                      'Red and blue indicate fail and pass, respectively, ' \
+                      '{cfail} and {cpass} indicate fail and pass, respectively, ' \
                       'according to the criterion described in ' \
-                      'Wan et al. (2017), eq. 6.'.format(time, args.p_threshold * 100)
+                      'Wan et al. (2017), eq. 6.'.format(time=time,
+                                                         pthres=args.p_threshold * 100,
+                                                         cfail=human_color_names['fail'][0].capitalize(),
+                                                         cpass=human_color_names['pass'][0])
         img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
         img_list.append(el.image('Distribution of the ensemble ΔRMSD at {}s'.format(time),
                                  img_caption, img_link, height=300))
@@ -592,11 +675,11 @@ def summarize_result(results_page):
     summary = {'Case': results_page['Title']}
     for elem in results_page['Data']['Elements']:
         if elem['Type'] == 'Table' and elem['Title'] == 'Results':
-               summary['Global'] = elem['Data']['Global']
-               summary['Land'] = elem['Data']['Land']
-               summary['Ocean'] = elem['Data']['Ocean']
-               summary['Ensembles'] = elem['Data']['Ensembles']
-               summary['Test status'] = elem['Data']['Test status']
+            summary['Global'] = elem['Data']['Global']
+            summary['Land'] = elem['Data']['Land']
+            summary['Ocean'] = elem['Data']['Ocean']
+            summary['Ensembles'] = elem['Data']['Ensembles']
+            summary['Test status'] = elem['Data']['Test status']
     return {'': summary}
 
 

@@ -1,11 +1,11 @@
 {
-    "pge_test_local": {
+    "pge_bit-for-bit": {
         "module": "/home/fjk/Documents/Code/EVV/evv/evv4esm/extensions/pg.py",
-        "test-case": "PGN_P1x1.ne4_ne4.FC5AV1C-L.cori-knl_intel.C.20190507_092713_6d4p10",
         "test-name": "Test",
-        "test-dir": "/home/fjk/Documents/Data/E3SM/PGN/PGN_P1x1.ne4_ne4.FC5AV1C-L.cori-knl_intel.C.20190507_092713_6d4p10/run",
+        "test-case": "PGN_P1x1.ne4_ne4.FC5AV1C-L.cori-knl_intel.C.20190808_131552_4uv1o0",
+        "test-dir": "/home/fjk/Documents/Data/E3SM/PGN/PGN_P1x1.ne4_ne4.FC5AV1C-L.cori-knl_intel.C.20190808_131552_4uv1o0/run",
         "ref-name": "Baseline",
-        "ref-dir": "/home/fjk/Documents/Data/E3SM/PGN/baseline",
+        "ref-dir": "/home/fjk/Documents/Data/E3SM/baselines/PGN_P1x1.ne4_ne4.FC5AV1C-L.cori-knl_intel",
         "variables": ["topphysbc",
                       "chkenergyfix",
                       "dadadj",
