@@ -109,7 +109,7 @@ def main(cl_args=None):
     from livvkit.util import elements
 
     if args.extensions:
-        functions.setup_output(jsd=os.path.join(args.livv_resource_dir, 'js'))
+        functions.setup_output()
     
         summary_elements = []
         validation_config = {}
