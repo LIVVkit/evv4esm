@@ -204,7 +204,7 @@ def case_files(args):
 
     for key in f_sets:
         # Require case files for at least the last 12 months.
-        if any(map(lambda x: x == [], f_sets[key].values())[-12:]):
+        if any(list(map(lambda x: x == [], f_sets[key].values()))[-12:]):
             raise EVVException('Could not find all the required case files for case: {}'.format(key))
 
     return f_sets, key1, key2
