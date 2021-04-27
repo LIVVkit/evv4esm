@@ -199,8 +199,8 @@ def case_files(args):
         key1 += '1'
         key2 += '2'
 
-    f_sets = {key1: e3sm.component_monthly_files(args.test_dir, 'cam', args.ninst),
-              key2: e3sm.component_monthly_files(args.ref_dir, 'cam', args.ninst)}
+    f_sets = {key1: e3sm.component_monthly_files(args.test_dir, 'eam', args.ninst),
+              key2: e3sm.component_monthly_files(args.ref_dir, 'eam', args.ninst)}
 
     for key in f_sets:
         # Require case files for at least the last 12 months.
