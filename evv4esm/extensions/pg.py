@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
-# Copyright (c) 2015,2016, UT-BATTELLE, LLC
+# Copyright (c) 2015-2021 UT-BATTELLE, LLC
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -139,7 +139,7 @@ def rmse_writer(file_name, rmse, perturbation_names, perturbation_variables, ini
 
         for icond in range(0, ninit):
             # NOTE: Zero vs One based indexing
-            nc_init_cond[icond] = init_file_template.format('cam', 'i', icond+1)
+            nc_init_cond[icond] = init_file_template.format('eam', 'i', icond+1)
 
 
 def variables_rmse(ifile_test, ifile_cntl, var_list, var_pefix=''):

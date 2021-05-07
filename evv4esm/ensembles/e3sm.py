@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
-# Copyright (c) 2018 UT-BATTELLE, LLC
+# Copyright (c) 2018-2021 UT-BATTELLE, LLC
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -47,7 +47,7 @@ from netCDF4 import Dataset
 def component_file_instance(component, case_file):
     search_regex = r'{c}_[0-9]+'.format(c=component)
     result = re.search(search_regex, case_file).group(0)
-    return int(result.replace('cam_', ''))
+    return int(result.replace('{}_'.format(component), ''))
 
 
 def file_date_str(case_file, style='short'):
