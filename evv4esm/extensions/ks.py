@@ -123,6 +123,10 @@ def parse_args(args=None):
                         default=os.getcwd(),
                         help='Image output location.')
 
+    parser.add_argument('--component',
+                        default='eam',
+                        help='Model component name (e.g. eam, cam, ...)')
+
     args, _ = parser.parse_known_args(args)
 
     # use config file arguments, but override with command line arguments
@@ -199,8 +203,8 @@ def case_files(args):
         key1 += '1'
         key2 += '2'
 
-    f_sets = {key1: e3sm.component_monthly_files(args.test_dir, 'eam', args.ninst),
-              key2: e3sm.component_monthly_files(args.ref_dir, 'eam', args.ninst)}
+    f_sets = {key1: e3sm.component_monthly_files(args.test_dir, args.component, args.ninst),
+              key2: e3sm.component_monthly_files(args.ref_dir, args.component, args.ninst)}
 
     for key in f_sets:
         # Require case files for at least the last 12 months.
