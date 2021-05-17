@@ -127,6 +127,10 @@ def parse_args(args=None):
                         default='eam',
                         help='Model component name (e.g. eam, cam, ...)')
 
+    parser.add_argument('--baseline-component',
+                        default='cam',
+                        help='Model component name for baseline (e.g. eam, cam, ...)')
+
     args, _ = parser.parse_known_args(args)
 
     # use config file arguments, but override with command line arguments
@@ -204,7 +208,7 @@ def case_files(args):
         key2 += '2'
 
     f_sets = {key1: e3sm.component_monthly_files(args.test_dir, args.component, args.ninst),
-              key2: e3sm.component_monthly_files(args.ref_dir, args.component, args.ninst)}
+              key2: e3sm.component_monthly_files(args.ref_dir, args.baseline_component, args.ninst)}
 
     for key in f_sets:
         # Require case files for at least the last 12 months.

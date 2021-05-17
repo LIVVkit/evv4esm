@@ -214,13 +214,13 @@ def main(args):
                 continue
             iinst_ctrl = _sub2instance(icond, 0, nprt)
             ifile_ctrl = os.path.join(args.ref_dir,
-                                      args.instance_file_template.format('', iinst_ctrl, '_woprt'))
+                                      args.instance_file_template.format('', args.baseline_component, iinst_ctrl, '_woprt'))
             # logger.debug("PGN_INFO:CNTL_TST:" + ifile_cntl)
 
             iinst_test = _sub2instance(icond, iprt, nprt)
             ifile_test = os.path.join(args.test_dir,
                                       args.instance_file_template.format(
-                                              args.test_case + '.', iinst_test, '_' + prt_name))
+                                              args.test_case + '.', args.component, iinst_test, '_' + prt_name))
             # logger.debug("PGN_INFO:TEST_TST:" + ifile_test)
 
             prt_rmse[prt_name] = variables_rmse(ifile_test, ifile_ctrl, args.variables, 't_')
