@@ -214,7 +214,7 @@ def main(args):
                 continue
             iinst_ctrl = _sub2instance(icond, 0, nprt)
             ifile_ctrl = os.path.join(args.ref_dir,
-                                      args.instance_file_template.format('', args.baseline_component, iinst_ctrl, '_woprt'))
+                                      args.instance_file_template.format('', args.component, iinst_ctrl, '_woprt'))
             # logger.debug("PGN_INFO:CNTL_TST:" + ifile_cntl)
 
             iinst_test = _sub2instance(icond, iprt, nprt)
