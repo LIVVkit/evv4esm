@@ -29,7 +29,7 @@
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-__version_info__ = (0, 2, 3)
+__version_info__ = (0, 2, 4)
 __version__ = '.'.join(str(vi) for vi in __version_info__)
 
 PASS_COLOR = '#389933'
