@@ -109,7 +109,7 @@ def _sub2instance(initial_condition, perturbation_index, total_perturbations):
     return instance
 
 
-def rmse_writer(file_name, rmse, perturbation_names, perturbation_variables, init_file_template):
+def rmse_writer(file_name, rmse, perturbation_names, perturbation_variables, init_file_template, model_name):
     """
     Opens and writes a netcdf file for PGE curves
     This function is here purely to avoid duplicate
@@ -139,7 +139,7 @@ def rmse_writer(file_name, rmse, perturbation_names, perturbation_variables, ini
 
         for icond in range(0, ninit):
             # NOTE: Zero vs One based indexing
-            nc_init_cond[icond] = init_file_template.format('eam', 'i', icond+1)
+            nc_init_cond[icond] = init_file_template.format(model_name, 'i', icond+1)
 
 
 def variables_rmse(ifile_test, ifile_cntl, var_list, var_pefix=''):
@@ -214,13 +214,13 @@ def main(args):
                 continue
             iinst_ctrl = _sub2instance(icond, 0, nprt)
             ifile_ctrl = os.path.join(args.ref_dir,
-                                      args.instance_file_template.format('', iinst_ctrl, '_woprt'))
+                                      args.instance_file_template.format('', args.component, iinst_ctrl, '_woprt'))
             # logger.debug("PGN_INFO:CNTL_TST:" + ifile_cntl)
 
             iinst_test = _sub2instance(icond, iprt, nprt)
             ifile_test = os.path.join(args.test_dir,
                                       args.instance_file_template.format(
-                                              args.test_case + '.', iinst_test, '_' + prt_name))
+                                              args.test_case + '.', args.component, iinst_test, '_' + prt_name))
             # logger.debug("PGN_INFO:TEST_TST:" + ifile_test)
 
             prt_rmse[prt_name] = variables_rmse(ifile_test, ifile_ctrl, args.variables, 't_')
@@ -231,7 +231,7 @@ def main(args):
     comp_rmse = np.reshape(rmse.RMSE.values, (args.ninit, nprt-1, nvar))
 
     rmse_writer(os.path.join(args.test_dir, 'comp_cld.nc'),
-                comp_rmse, args.perturbations.keys(), args.variables, args.init_file_template)
+                comp_rmse, args.perturbations.keys(), args.variables, args.init_file_template, args.init_model)
 
     details = OrderedDict()
     with Dataset(os.path.join(args.ref_dir, args.pge_cld)) as ref_cld:

@@ -163,18 +163,18 @@ def main(args):
         args.test_case += '1'
         args.ref_case += '2'
 
-    file_search_glob = '{d}/*eam_????.h0.0001-01-01-?????.nc.{s}'
+    file_search_glob = '{d}/*{c}_????.h0.0001-01-01-?????.nc.{s}'
     truth_ens = {instance: list(files) for instance, files in groupby(
-            sorted(glob.glob(file_search_glob.format(d=args.ref_dir, s='DT0001'))),
-            key=lambda f: e3sm.component_file_instance('eam', f))}
+            sorted(glob.glob(file_search_glob.format(d=args.ref_dir, c=args.component, s='DT0001'))),
+            key=lambda f: e3sm.component_file_instance(args.baseline_component, f))}
 
     ref_ens = {instance: list(files) for instance, files in groupby(
-            sorted(glob.glob(file_search_glob.format(d=args.ref_dir, s='DT0002'))),
-            key=lambda f: e3sm.component_file_instance('eam', f))}
+            sorted(glob.glob(file_search_glob.format(d=args.ref_dir, c=args.component, s='DT0002'))),
+            key=lambda f: e3sm.component_file_instance(args.baseline_component, f))}
 
     test_ens = {instance: list(files) for instance, files in groupby(
-            sorted(glob.glob(file_search_glob.format(d=args.test_dir, s='DT0002'))),
-            key=lambda f: e3sm.component_file_instance('eam', f))}
+            sorted(glob.glob(file_search_glob.format(d=args.test_dir, c=args.component, s='DT0002'))),
+            key=lambda f: e3sm.component_file_instance(args.component, f))}
 
     # So, we want a pandas dataframe that will have the columns :
     #     (test/ref, ensemble, seconds, l2_global, l2_land, l2_ocean)
