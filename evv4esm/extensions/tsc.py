@@ -166,11 +166,11 @@ def main(args):
     file_search_glob = '{d}/*{c}_????.h0.0001-01-01-?????.nc.{s}'
     truth_ens = {instance: list(files) for instance, files in groupby(
             sorted(glob.glob(file_search_glob.format(d=args.ref_dir, c=args.component, s='DT0001'))),
-            key=lambda f: e3sm.component_file_instance(args.baseline_component, f))}
+            key=lambda f: e3sm.component_file_instance(args.component, f))}
 
     ref_ens = {instance: list(files) for instance, files in groupby(
             sorted(glob.glob(file_search_glob.format(d=args.ref_dir, c=args.component, s='DT0002'))),
-            key=lambda f: e3sm.component_file_instance(args.baseline_component, f))}
+            key=lambda f: e3sm.component_file_instance(args.component, f))}
 
     test_ens = {instance: list(files) for instance, files in groupby(
             sorted(glob.glob(file_search_glob.format(d=args.test_dir, c=args.component, s='DT0002'))),
