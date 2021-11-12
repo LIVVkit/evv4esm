@@ -28,8 +28,6 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 import os
 import sys
 import time
@@ -75,8 +73,8 @@ def parse_args(args=None):
     from evv4esm import resources
     args.livv_resource_dir = livvkit.resource_dir
     livvkit.resource_dir = os.sep.join(resources.__path__)
-    
-    return args 
+
+    return args
 
 
 def main(cl_args=None):
@@ -106,7 +104,7 @@ def main(cl_args=None):
     from livvkit.components import validation
     from livvkit import scheduler
     from livvkit.util import functions
-    from livvkit.util import elements
+    from livvkit import elements
 
     if args.extensions:
         functions.setup_output()
@@ -120,31 +118,24 @@ def main(cl_args=None):
         for conf in livvkit.validation_model_configs:
             validation_config = functions.merge_dicts(validation_config,
                                                       functions.read_json(conf))
-        summary_elements.extend(scheduler.run_quiet(validation, validation_config,
-                                                    group=False))
+            summary_elements.extend(scheduler.run_quiet("validation", validation, validation_config,
+                                                        group=True))
         print(" -----------------------------------------------------------------")
         print("   Extensions test suite complete ")
         print(" -----------------------------------------------------------------")
         print("")
 
-        result = elements.page("Summary", "", element_list=summary_elements)
-        functions.write_json(result, livvkit.output_dir, "index.json")
+        result = elements.Page("Summary", "", elements=summary_elements)
+        with open(os.path.join(livvkit.output_dir, "index.json"), "w") as index_data:
+            index_data.write(result._repr_json())
         print("-------------------------------------------------------------------")
         print(" Done!  Results can be seen in a web browser at:")
         print("   " + os.path.join(livvkit.output_dir, 'index.html'))
         print("-------------------------------------------------------------------")
 
     if args.serve:
-        try:
-            # Python 3
-            import http.server as server
-            import socketserver as socket
-        except ImportError:
-            # Python 2
-            # noinspection PyPep8Naming
-            import SimpleHTTPServer as server
-            # noinspection PyPep8Naming
-            import SocketServer as socket
+        import http.server as server
+        import socketserver as socket
 
         httpd = socket.TCPServer(('', args.serve), server.SimpleHTTPRequestHandler)
 
