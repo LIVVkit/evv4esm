@@ -371,14 +371,6 @@ def run(name, config, print_details=False):
 
     details, img_gal = main(test_args)
 
-    # tbl_el = {'Type': 'Table',
-    #           'Title': 'Results',
-    #           'Headers': ['Test status', 'Null hypothesis', 'T test (t, p)', 'Ensembles'],
-    #           'Data': {'Null hypothesis': details['h0'],
-    #                    'T test (t, p)': details['T test (t, p)'],
-    #                    'Test status': 'pass' if details['h0'] == 'accept' else 'fail',
-    #                    'Ensembles': 'statistically identical' if details['h0'] == 'accept' else 'statistically different'}
-    #           }
     res_table = el.Table(
         title="Results",
         data=OrderedDict(
@@ -409,14 +401,13 @@ def print_summary(summary):
 
 def summarize_result(results_page):
     summary = {'Case': results_page.title}
-    summary["title"] = results_page.title
     
     for elem in results_page.elements:
         if isinstance(elem, el.Table) and elem.title == "Results":
             summary['Test status'] = 'pass' if elem.data['Null hypothesis'][0] == 'accept' else 'fail'
             summary['Null hypothesis'] = elem.data['Null hypothesis'][0]
             summary['T test (t, p)'] = elem.data['T test (t, p)'][0]
-            summary['Ensembles'] = 'statistically identical' if elem.data['Null hypothesis'] == 'accept' else 'statistically different'
+            summary['Ensembles'] = 'statistically identical' if elem.data['Null hypothesis'][0] == 'accept' else 'statistically different'
             break
         else:
             continue
