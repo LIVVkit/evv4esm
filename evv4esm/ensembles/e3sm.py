@@ -102,8 +102,16 @@ def gather_monthly_averages(ensemble_files, variable_set=None):
                         continue
                     else:
                         m = np.mean(data.variables[var][0, ...])
+                    try:
+                        _name = f": {data.variables[var].getncattr('long_name')}"
+                    except AttributeError:
+                        _name = ""
+                    try:
+                        _units = f" [{data.variables[var].getncattr('units')}]"
+                    except AttributeError:
+                        _units = ""
+                    desc = f"{_name}{_units}"
+                    monthly_avgs.append((case, var, '{:04}'.format(inst), date_str, m, desc))
 
-                    monthly_avgs.append((case, var, '{:04}'.format(inst), date_str, m))
-
-    monthly_avgs = pd.DataFrame(monthly_avgs, columns=('case', 'variable', 'instance', 'date', 'monthly_mean'))
+    monthly_avgs = pd.DataFrame(monthly_avgs, columns=('case', 'variable', 'instance', 'date', 'monthly_mean', 'desc'))
     return monthly_avgs

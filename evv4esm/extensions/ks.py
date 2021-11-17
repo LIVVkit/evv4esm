@@ -44,27 +44,24 @@ an empirically derived approximate null distribution of t using resampling
 techniques.
 """
 
-from __future__ import absolute_import, division, print_function, unicode_literals
-import six
-
-import os
 import argparse
-
-from pprint import pprint
+import os
 from collections import OrderedDict
-    
-import numpy as np
-from scipy import stats
+from pathlib import Path
+from pprint import pprint
 
 import livvkit
-from livvkit.util import elements as el
-from livvkit.util import functions as fn
-from livvkit.util.LIVVDict import LIVVDict
-
+import numpy as np
+import six
+import pandas as pd
+from evv4esm import EVVException, human_color_names
 from evv4esm.ensembles import e3sm
 from evv4esm.ensembles.tools import monthly_to_annual_avg, prob_plot
 from evv4esm.utils import bib2html
-from evv4esm import human_color_names, EVVException
+from livvkit import elements as el
+from livvkit.util import functions as fn
+from livvkit.util.LIVVDict import LIVVDict
+from scipy import stats
 
 
 def variable_set(name):
@@ -145,6 +142,19 @@ def parse_args(args=None):
     return args
 
 
+def details_to_table(details, headers):
+    tbl = dict((header, []) for header in headers)
+    for var in sorted(details):
+        tbl[headers[0]].append(var)
+        for _hdr in headers[1:]:
+            _dat = details[var][_hdr]
+            if isinstance(_dat, stats.stats.KstestResult) or isinstance(_dat, stats.stats.Ttest_indResult):
+                tbl[_hdr].append("{}, {}".format(*_dat))
+            else:
+                tbl[_hdr].append(_dat)
+    return tbl
+
+
 def run(name, config):
     """
     Runs the analysis.
@@ -156,7 +166,7 @@ def run(name, config):
     Returns:
        The result of elements.page with the list of elements to display
     """
-   
+
     config_arg_list = []
     [config_arg_list.extend(['--'+key, str(val)]) for key, val in config.items()]
 
@@ -167,31 +177,41 @@ def run(name, config):
 
     details, img_gal = main(args)
 
-    tbl_data = OrderedDict(sorted(details.items()))
+    tbl_data = OrderedDict(sorted([(_key, _val) for _key, _val in details.items()]))
     tbl_el = {'Type': 'V-H Table',
               'Title': 'Validation',
               'TableTitle': 'Analyzed variables',
               'Headers': ['h0', 'K-S test (D, p)', 'T test (t, p)'],
               'Data': {'': tbl_data}
               }
-    bib_html = bib2html(os.path.join(os.path.dirname(__file__), 'ks.bib'))
-    tl = [el.tab('Figures', element_list=[img_gal]),
-          el.tab('Details', element_list=[tbl_el]),
-          el.tab('References', element_list=[el.html(bib_html)])]
 
-    rejects = [var for var, dat in tbl_data.items() if dat['h0'] == 'reject']
-    results = {'Type': 'Table',
-               'Title': 'Results',
-               'Headers': ['Test status', 'Variables analyzed', 'Rejecting', 'Critical value', 'Ensembles'],
-               'Data': {'Test status': 'pass' if len(rejects) < args.critical else 'fail',
-                        'Variables analyzed': len(tbl_data.keys()),
-                        'Rejecting': len(rejects),
-                        'Critical value': args.critical,
-                        'Ensembles': 'statistically identical' if len(rejects) < args.critical else 'statistically different'}
-               }
+    # headers = ["Variable", 'h0', 'K-S test (D, p)', 'T test (t, p)']
+    # tbl_data = details_to_table(details, headers)
+    bib_html = bib2html(os.path.join(os.path.dirname(__file__), 'ks.bib'))
+
+    tabs = el.Tabs(
+        {"Figures": img_gal, "Details": [el.Table(title="Validation", data=tbl_data, transpose=True)], "References": [el.RawHTML(bib_html)]}
+    )
+    # rejects = [var for var, dat in tbl_data.items() if dat[0]['h0'] == 'reject']
+    rejects = [var for var, dat in details.items() if dat["h0"] == "reject"]
+    # rejects = [var for var, dat in tbl_data['h0'].items() if dat == "reject"]
+
+    results = el.Table(
+        title="Results",
+        data=OrderedDict(
+            {
+                'Test status': ['pass' if len(rejects) < args.critical else 'fail'],
+                'Variables analyzed': [len(tbl_data.keys())],
+                'Rejecting': [len(rejects)],
+                'Critical value': [int(args.critical)],
+                'Ensembles': ['statistically identical' if len(rejects) < args.critical else 'statistically different']
+
+            }
+        )
+    )
 
     # FIXME: Put into a ___ function
-    page = el.page(name, __doc__.replace('\n\n', '<br><br>'), element_list=[results], tab_list=tl)
+    page = el.Page(name, __doc__.replace('\n\n', '<br><br>'), elements=[results, tabs])
     return page
 
 
@@ -232,14 +252,15 @@ def print_details(details):
 
 
 def summarize_result(results_page):
-    summary = {'Case': results_page['Title']}
-    for elem in results_page['Data']['Elements']:
-        if elem['Type'] == 'Table' and elem['Title'] == 'Results':
-            summary['Test status'] = elem['Data']['Test status']
-            summary['Variables analyzed'] = elem['Data']['Variables analyzed']
-            summary['Rejecting'] = elem['Data']['Rejecting']
-            summary['Critical value'] = elem['Data']['Critical value']
-            summary['Ensembles'] = elem['Data']['Ensembles']
+    summary = {'Case': results_page.title}
+
+    for elem in results_page.elements:
+        if isinstance(elem, el.Table) and elem.title == "Results":
+            summary['Test status'] = elem.data['Test status'][0]
+            summary['Variables analyzed'] = elem.data['Variables analyzed'][0]
+            summary['Rejecting'] = elem.data['Rejecting'][0]
+            summary['Critical value'] = elem.data['Critical value'][0]
+            summary['Ensembles'] = elem.data['Ensembles'][0]
             break
         else:
             continue
@@ -276,7 +297,9 @@ def main(args):
     if not common_vars:
         raise EVVException('No common variables between {} and {} to analyze!'.format(args.test_case, args.ref_case))
 
-    img_list = []
+    img_list_pass = []
+    img_list_fail = []
+    img_list_null = []
     details = LIVVDict()
     for var in sorted(common_vars):
         annuals_1 = annual_avgs.query('case == @args.test_case & variable == @var').monthly_mean.values
@@ -307,11 +330,12 @@ def main(args):
         img_file = os.path.relpath(os.path.join(args.img_dir, var + '.png'), os.getcwd())
         prob_plot(annuals_1, annuals_2, 20, img_file, test_name=args.test_case, ref_name=args.ref_case,
                   pf=details[var]['h0'])
-        
-        img_desc = 'Mean annual global average of {var} for <em>{testcase}</em> ' \
+        _desc = monthly_avgs.query('case == @args.test_case & variable == @var').desc.values[0]
+        img_desc = 'Mean annual global average of {var}{desc} for <em>{testcase}</em> ' \
                    'is {testmean:.3e} and for <em>{refcase}</em> is {refmean:.3e}. ' \
                    'Pass (fail) is indicated by {cpass} ({cfail}) coloring of the ' \
                    'plot markers and bars.'.format(var=var,
+                                                   desc=_desc,
                                                    testcase=args.test_case,
                                                    testmean=details[var]['mean (test case, ref. case)'][0],
                                                    refcase=args.ref_case,
@@ -319,12 +343,25 @@ def main(args):
                                                    cfail=human_color_names['fail'][0],
                                                    cpass=human_color_names['pass'][0])
 
-        img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
-        img_list.append(el.image(var, img_desc, img_link))
-        
-    img_gal = el.gallery('Analyzed variables', img_list)
+        # img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
+        img_link = Path(*Path(args.img_dir).parts[-2:], Path(img_file).name)
+        _img = el.Image(var, img_desc, img_link, relative_to="", group=details[var]['h0'])
+        if details[var]['h0'] == 'reject':
+            img_list_fail.append(_img)
+        elif details[var]['h0'] == 'accept':
+            img_list_pass.append(_img)
+        else:
+            img_list_null.append(_img)
 
-    return details, img_gal
+    gals = []
+    if img_list_fail:
+        gals.append(el.Gallery("Failed variables", img_list_fail))
+    if img_list_pass:
+        gals.append(el.Gallery("Passed variables", img_list_pass))
+    if img_list_null:
+        gals.append(el.Gallery("Null variables", img_list_null))
+
+    return details, gals
 
 
 if __name__ == '__main__':
