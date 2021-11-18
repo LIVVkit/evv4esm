@@ -52,16 +52,17 @@ from pprint import pprint
 
 import livvkit
 import numpy as np
-import six
 import pandas as pd
-from evv4esm import EVVException, human_color_names
-from evv4esm.ensembles import e3sm
-from evv4esm.ensembles.tools import monthly_to_annual_avg, prob_plot
-from evv4esm.utils import bib2html
+import six
 from livvkit import elements as el
 from livvkit.util import functions as fn
 from livvkit.util.LIVVDict import LIVVDict
 from scipy import stats
+
+from evv4esm import EVVException, human_color_names
+from evv4esm.ensembles import e3sm
+from evv4esm.ensembles.tools import monthly_to_annual_avg, prob_plot
+from evv4esm.utils import bib2html
 
 
 def variable_set(name):
@@ -115,7 +116,7 @@ def parse_args(args=None):
                         default=13, type=float,
                         help='The critical value (desired significance level) for rejecting the ' +
                         'null hypothesis.')
-   
+
     parser.add_argument('--img-dir',
                         default=os.getcwd(),
                         help='Image output location.')
@@ -135,25 +136,25 @@ def parse_args(args=None):
                 args.config['ks'][key] = val
 
         config_arg_list = []
-        [config_arg_list.extend(['--'+key, str(val)]) for key, val in args.config['ks'].items()
-         if key != 'config']
+        _ = [
+            config_arg_list.extend(['--'+key, str(val)])
+            for key, val in args.config['ks'].items() if key != 'config'
+        ]
         args, _ = parser.parse_known_args(config_arg_list)
 
     return args
 
 
-def details_to_table(details, headers):
-    tbl = dict((header, []) for header in headers)
-    for var in sorted(details):
-        tbl[headers[0]].append(var)
-        for _hdr in headers[1:]:
-            _dat = details[var][_hdr]
-            if isinstance(_dat, stats.stats.KstestResult) or isinstance(_dat, stats.stats.Ttest_indResult):
-                tbl[_hdr].append("{}, {}".format(*_dat))
-            else:
-                tbl[_hdr].append(_dat)
-    return tbl
-
+def col_fmt(dat):
+    """Format results for table output."""
+    if dat is not None:
+        try:
+            _out = "{:.3e}, {:.3e}".format(*dat)
+        except TypeError:
+            _out = dat
+    else:
+        _out = "-"
+    return _out
 
 def run(name, config):
     """
@@ -177,35 +178,46 @@ def run(name, config):
 
     details, img_gal = main(args)
 
-    tbl_data = OrderedDict(sorted([(_key, _val) for _key, _val in details.items()]))
-    tbl_el = {'Type': 'V-H Table',
-              'Title': 'Validation',
-              'TableTitle': 'Analyzed variables',
-              'Headers': ['h0', 'K-S test (D, p)', 'T test (t, p)'],
-              'Data': {'': tbl_data}
-              }
+    table_data = pd.DataFrame(details).T
+    _hdrs = [
+        "h0",
+        "K-S test (D, p)",
+        "T test (t, p)",
+        "mean (test case, ref. case)",
+        "std (test case, ref. case)",
+    ]
+    table_data = table_data[_hdrs]
+    for _hdr in _hdrs[1:]:
+        table_data[_hdr] = table_data[_hdr].apply(col_fmt)
 
-    # headers = ["Variable", 'h0', 'K-S test (D, p)', 'T test (t, p)']
-    # tbl_data = details_to_table(details, headers)
+    tables = [
+        el.Table("Accepted", data=table_data[table_data["h0"] == "accept"]),
+        el.Table("Rejected", data=table_data[table_data["h0"] == "reject"]),
+        el.Table("Null", data=table_data[~table_data["h0"].isin(["accept", "reject"])])
+    ]
+
     bib_html = bib2html(os.path.join(os.path.dirname(__file__), 'ks.bib'))
 
     tabs = el.Tabs(
-        {"Figures": img_gal, "Details": [el.Table(title="Validation", data=tbl_data, transpose=True)], "References": [el.RawHTML(bib_html)]}
+        {
+            "Figures": img_gal,
+            "Details": tables,
+            "References": [el.RawHTML(bib_html)]
+        }
     )
-    # rejects = [var for var, dat in tbl_data.items() if dat[0]['h0'] == 'reject']
     rejects = [var for var, dat in details.items() if dat["h0"] == "reject"]
-    # rejects = [var for var, dat in tbl_data['h0'].items() if dat == "reject"]
 
     results = el.Table(
         title="Results",
         data=OrderedDict(
             {
                 'Test status': ['pass' if len(rejects) < args.critical else 'fail'],
-                'Variables analyzed': [len(tbl_data.keys())],
+                'Variables analyzed': [len(details.keys())],
                 'Rejecting': [len(rejects)],
                 'Critical value': [int(args.critical)],
-                'Ensembles': ['statistically identical' if len(rejects) < args.critical else 'statistically different']
-
+                'Ensembles': [
+                    'statistically identical' if len(rejects) < args.critical else 'statistically different'
+                ]
             }
         )
     )
@@ -262,8 +274,7 @@ def summarize_result(results_page):
             summary['Critical value'] = elem.data['Critical value'][0]
             summary['Ensembles'] = elem.data['Ensembles'][0]
             break
-        else:
-            continue
+
     return {'': summary}
 
 
@@ -272,13 +283,13 @@ def populate_metadata():
     Generates the metadata responsible for telling the summary what
     is done by this module's run method
     """
-    
+
     metadata = {'Type': 'ValSummary',
                 'Title': 'Validation',
                 'TableTitle': 'Kolmogorov-Smirnov test',
                 'Headers': ['Test status', 'Variables analyzed', 'Rejecting', 'Critical value', 'Ensembles']}
     return metadata
-    
+
 
 def main(args):
     ens_files, key1, key2 = case_files(args)
@@ -297,9 +308,7 @@ def main(args):
     if not common_vars:
         raise EVVException('No common variables between {} and {} to analyze!'.format(args.test_case, args.ref_case))
 
-    img_list_pass = []
-    img_list_fail = []
-    img_list_null = []
+    images = {"accept": [], "reject": [], "-": []}
     details = LIVVDict()
     for var in sorted(common_vars):
         annuals_1 = annual_avgs.query('case == @args.test_case & variable == @var').monthly_mean.values
@@ -343,23 +352,17 @@ def main(args):
                                                    cfail=human_color_names['fail'][0],
                                                    cpass=human_color_names['pass'][0])
 
-        # img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
         img_link = Path(*Path(args.img_dir).parts[-2:], Path(img_file).name)
         _img = el.Image(var, img_desc, img_link, relative_to="", group=details[var]['h0'])
-        if details[var]['h0'] == 'reject':
-            img_list_fail.append(_img)
-        elif details[var]['h0'] == 'accept':
-            img_list_pass.append(_img)
-        else:
-            img_list_null.append(_img)
+        images[details[var]['h0']].append(_img)
 
     gals = []
-    if img_list_fail:
-        gals.append(el.Gallery("Failed variables", img_list_fail))
-    if img_list_pass:
-        gals.append(el.Gallery("Passed variables", img_list_pass))
-    if img_list_null:
-        gals.append(el.Gallery("Null variables", img_list_null))
+    for group in ["reject", "accept", "-"]:
+        _group_name = {
+            "reject": "Failed variables", "accept": "Passed variables", "-": "Null variables"
+        }
+        if images[group]:
+            gals.append(el.Gallery(_group_name[group], images[group]))
 
     return details, gals
 
