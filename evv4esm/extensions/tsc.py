@@ -47,8 +47,6 @@ statistically zero) at any time step for any variable will cause this test to
 fail.
 """
 
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 import argparse
 import glob
 import os

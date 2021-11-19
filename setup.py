@@ -27,8 +27,6 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 import re
 
@@ -67,11 +65,11 @@ setup(
 
                    'License :: OSI Approved :: BSD License',
 
-                   'Programming Language :: Python :: 2',
-                   'Programming Language :: Python :: 2.7',
                    'Programming Language :: Python :: 3',
-                   'Programming Language :: Python :: 3.5',
                    'Programming Language :: Python :: 3.6',
+                   'Programming Language :: Python :: 3.7',
+                   'Programming Language :: Python :: 3.8',
+                   'Programming Language :: Python :: 3.9',
                    ],
 
       install_requires=[
@@ -79,7 +77,7 @@ setup(
           'numpy',
           'scipy',
           'pandas',
-          'livvkit==2.1.6',
+          'livvkit==3.0.1',
           'netCDF4',
           'matplotlib',
           'pybtex',
