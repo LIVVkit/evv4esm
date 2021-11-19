@@ -191,8 +191,8 @@ def run(name, config):
         table_data[_hdr] = table_data[_hdr].apply(col_fmt)
 
     tables = [
-        el.Table("Accepted", data=table_data[table_data["h0"] == "accept"]),
         el.Table("Rejected", data=table_data[table_data["h0"] == "reject"]),
+        el.Table("Accepted", data=table_data[table_data["h0"] == "accept"]),
         el.Table("Null", data=table_data[~table_data["h0"].isin(["accept", "reject"])])
     ]
 
