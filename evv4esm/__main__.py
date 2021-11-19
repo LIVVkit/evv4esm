@@ -108,7 +108,6 @@ def main(cl_args=None):
 
     if args.extensions:
         functions.setup_output()
-    
         summary_elements = []
         validation_config = {}
         print(" -----------------------------------------------------------------")
@@ -119,7 +118,7 @@ def main(cl_args=None):
             validation_config = functions.merge_dicts(validation_config,
                                                       functions.read_json(conf))
             summary_elements.extend(scheduler.run_quiet("validation", validation, validation_config,
-                                                        group=True))
+                                                        group=False))
         print(" -----------------------------------------------------------------")
         print("   Extensions test suite complete ")
         print(" -----------------------------------------------------------------")
