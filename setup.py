@@ -51,8 +51,10 @@ setup(
 
       url='https://github.com/LIVVkit/evv4esm',
 
-      author='Joseph H. Kennedy',
-      author_email='kennedyjh@ornl.gov',
+      author='Joseph H. Kennedy'
+      author_email='kennedyjh@ornl.gov'
+      maintainer='Michael Kelleher'
+      maintainer_email='kelleherme@ornl.gov'
 
       license='BSD',
       include_package_data=True,
