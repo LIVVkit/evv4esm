@@ -161,23 +161,10 @@ def run(name, config, print_details=False):
             'Global_details': detail_tables["global"],
             'Land_details': detail_tables["land"],
             'Ocean_details': detail_tables["ocean"],
-            # 'Global_details': [el.Table(global_tbl_el)],
-            # 'Land_details': [el.Table(land_tbl_el)],
-            # 'Ocean_details': [el.Table(ocean_tbl_el)],
             'References': [el.RawHTML(bib_html)]
         }
     )
 
-    # results = {'Type': 'Table',
-    #            'Title': 'Results',
-    #            'Headers': ['Test status', 'Global', 'Land', 'Ocean', 'Ensembles'],
-    #            'Data': {'Test status': [details['overall']],
-    #                     'Global': [details['domains']['delta_l2_global']],
-    #                     'Land': [details['domains']['delta_l2_land']],
-    #                     'Ocean': [details['domains']['delta_l2_ocean']],
-    #                     'Ensembles': ['statistically identical' if details['overall'] == 'Pass' else 'statistically different'],
-    #                     }
-    #            }
     results = el.Table(
         title="Results",
         data=OrderedDict(
@@ -390,7 +377,6 @@ def plot_bit_for_bit(args):
 
     failing_img_caption = 'The number of failing variables across both domains (land and ' \
                           'ocean) as a function of model integration time.'
-    # failing_img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(failing_img_file))
     failing_img_link = Path(*Path(args.img_dir).parts[-2:], Path(failing_img_file).name)
     failing_img = el.Image('Timeline of failing variables', failing_img_caption, failing_img_link, height=300, relative_to="")
 
