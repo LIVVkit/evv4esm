@@ -79,7 +79,7 @@ setup(
           'numpy',
           'scipy',
           'pandas',
-          'livvkit==3.0.1',
+          'livvkit>=3.0.1',
           'netCDF4',
           'matplotlib',
           'pybtex',
