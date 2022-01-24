@@ -47,14 +47,13 @@ statistically zero) at any time step for any variable will cause this test to
 fail.
 """
 
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 import argparse
 import glob
 import os
 from collections import OrderedDict
 from itertools import groupby
 from pprint import pprint
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -64,7 +63,7 @@ from scipy import stats
 from netCDF4 import Dataset
 
 import livvkit
-from livvkit.util import elements as el
+from livvkit import elements as el
 from livvkit.util import functions as fn
 from livvkit.util.LIVVDict import LIVVDict
 
@@ -135,26 +134,53 @@ def run(name, config, print_details=False):
                     'Data': details['ocean'],
                     }
     bib_html = bib2html(os.path.join(os.path.dirname(__file__), 'tsc.bib'))
-    tab_list = [el.tab('Figures', element_list=[img_gal]),
-                el.tab('Global_details', element_list=[global_tbl_el]),
-                el.tab('Land_details', element_list=[land_tbl_el]),
-                el.tab('Ocean_details', element_list=[ocean_tbl_el]),
-                el.tab('References', element_list=[el.html(bib_html)])]
+    detail_tables = {
+        "global": [],
+        "land": [],
+        "ocean": []
+    }
+    table_headers = ["Variable", *domain_headers]
+    for level in detail_tables:
+        for _time in details[level]:
+            tbl_data = {_hdr: [] for _hdr in table_headers}
+            for _var in details[level][_time]:
+                tbl_data["Variable"].append(_var)
+                for _hdr, val in details[level][_time][_var].items():
+                    tbl_data[_hdr].append(val)
 
-    results = {'Type': 'Table',
-               'Title': 'Results',
-               'Headers': ['Test status', 'Global', 'Land', 'Ocean', 'Ensembles'],
-               'Data': {'Test status': details['overall'],
-                        'Global': details['domains']['delta_l2_global'],
-                        'Land': details['domains']['delta_l2_land'],
-                        'Ocean': details['domains']['delta_l2_ocean'],
-                        'Ensembles': 'statistically identical' if details['overall'] == 'Pass' else 'statistically different',
-                        }
-               }
+            detail_tables[level].append(
+                el.Table(
+                    title=f"{level.capitalize()}, {_time}",
+                    data=tbl_data
+                )
+            )
+
+    tabs = el.Tabs(
+        {
+            'Figures': [img_gal],
+            'Global_details': detail_tables["global"],
+            'Land_details': detail_tables["land"],
+            'Ocean_details': detail_tables["ocean"],
+            'References': [el.RawHTML(bib_html)]
+        }
+    )
+
+    results = el.Table(
+        title="Results",
+        data=OrderedDict(
+            {
+                'Test status': [details['overall']],
+                'Global': [details['domains']['delta_l2_global']],
+                'Land': [details['domains']['delta_l2_land']],
+                'Ocean': [details['domains']['delta_l2_ocean']],
+                'Ensembles': ['statistically identical' if details['overall'] == 'Pass' else 'statistically different'],
+            }
+        )
+    )
 
     # FIXME: Put into a ___ function
     doc_text = __doc__.format((1 - test_args.p_threshold) * 100).replace('\n\n', '<br><br>')
-    page = el.page(name, doc_text, element_list=[results], tab_list=tab_list)
+    page = el.Page(name, doc_text, elements=[results, tabs])
     return page
 
 
@@ -312,7 +338,7 @@ def main(args):
                    }}
         img_list = plot_bit_for_bit(args)
 
-    img_gallery = el.gallery('Time step convergence', img_list)
+    img_gallery = el.Gallery('Time step convergence', img_list)
     return details, img_gallery
 
 
@@ -351,8 +377,8 @@ def plot_bit_for_bit(args):
 
     failing_img_caption = 'The number of failing variables across both domains (land and ' \
                           'ocean) as a function of model integration time.'
-    failing_img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(failing_img_file))
-    failing_img = el.image('Timeline of failing variables', failing_img_caption, failing_img_link, height=300)
+    failing_img_link = Path(*Path(args.img_dir).parts[-2:], Path(failing_img_file).name)
+    failing_img = el.Image('Timeline of failing variables', failing_img_caption, failing_img_link, height=300, relative_to="")
 
     pmin_img_file = os.path.relpath(os.path.join(args.img_dir, 'pmin_timeline.png'), os.getcwd())
     fig, ax = plt.subplots(figsize=(10, 8))
@@ -384,8 +410,9 @@ def plot_bit_for_bit(args):
                        'a logarithmic y-scale. The dashed grey line indicates the ' \
                        'threshold for assigning an overall pass or fail to a test ' \
                        'ensemble; see Wan et al. (2017) eqn. 8.'
-    pmin_img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(pmin_img_file))
-    pmin_img = el.image('Timeline of P_{min}', pmin_img_caption, pmin_img_link, height=300)
+    # pmin_img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(pmin_img_file))
+    pmin_img_link = Path(*Path(args.img_dir).parts[-2:], Path(pmin_img_file).name)
+    pmin_img = el.Image('Timeline of P_{min}', pmin_img_caption, pmin_img_link, height=300, relative_to="")
 
     return [failing_img, pmin_img]
 
@@ -413,8 +440,10 @@ def plot_failing_variables(args, null_hypothesis, img_file):
 
     img_caption = 'The number of failing variables across both domains (land and ' \
                   'ocean) as a function of model integration time.'
-    img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
-    img = el.image('Timeline of failing variables', img_caption, img_link, height=300)
+    img_link = Path(*Path(args.img_dir).parts[-2:], Path(img_file).name)
+    img = el.Image(
+        'Timeline of failing variables', img_caption, img_link, height=300, relative_to=""
+    )
     return img
 
 
@@ -461,8 +490,9 @@ def plot_pmin(args, ttest, img_file):
                   'a logarithmic y-scale. The dashed grey line indicates the ' \
                   'threshold for assigning an overall pass or fail to a test ' \
                   'ensemble; see Wan et al. (2017) eqn. 8.'
-    img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
-    img = el.image('Timeline of P_{min}', img_caption, img_link, height=300)
+    # img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
+    img_link = Path(*Path(args.img_dir).parts[-2:], Path(img_file).name)
+    img = el.Image('Timeline of P_{min}', img_caption, img_link, height=300, relative_to="")
     return img
 
 
@@ -534,9 +564,9 @@ def boxplot_delta_rmsd(args, delta_rmsd, null_hypothesis, img_file_format):
                       'Wan et al. (2017), eq. 6.'.format(time=time,
                                                          cfail=human_color_names['fail'][0].capitalize(),
                                                          cpass=human_color_names['pass'][0])
-        img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
-        img_list.append(el.image('Boxplot of normalized ensemble ΔRMSD at {}s'.format(time),
-                                 img_caption, img_link, height=300))
+        img_link = Path(*Path(args.img_dir).parts[-2:], Path(img_file).name)
+        img_list.append(el.Image('Boxplot of normalized ensemble ΔRMSD at {}s'.format(time),
+                                 img_caption, img_link, height=300, relative_to=""))
     return img_list
 
 
@@ -648,9 +678,9 @@ def errorbars_delta_rmsd(args, delta_rmsd, null_hypothesis, img_file_format):
                                                          pthres=args.p_threshold * 100,
                                                          cfail=human_color_names['fail'][0].capitalize(),
                                                          cpass=human_color_names['pass'][0])
-        img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
-        img_list.append(el.image('Distribution of the ensemble ΔRMSD at {}s'.format(time),
-                                 img_caption, img_link, height=300))
+        img_link = Path(*Path(args.img_dir).parts[-2:], Path(img_file).name)
+        img_list.append(el.Image('Distribution of the ensemble ΔRMSD at {}s'.format(time),
+                                 img_caption, img_link, height=300, relative_to=""))
     return img_list
 
 
@@ -672,14 +702,12 @@ def print_summary(summary):
 
 
 def summarize_result(results_page):
-    summary = {'Case': results_page['Title']}
-    for elem in results_page['Data']['Elements']:
-        if elem['Type'] == 'Table' and elem['Title'] == 'Results':
-            summary['Global'] = elem['Data']['Global']
-            summary['Land'] = elem['Data']['Land']
-            summary['Ocean'] = elem['Data']['Ocean']
-            summary['Ensembles'] = elem['Data']['Ensembles']
-            summary['Test status'] = elem['Data']['Test status']
+    summary = {'Case': results_page.title}
+    for elem in results_page.elements:
+        if isinstance(elem, el.Table) and elem.title == "Results":
+            for group in ["Global", "Land", "Ocean", "Ensembles", "Test status"]:
+                summary[group] = elem.data[group][0]
+            break
     return {'': summary}
 
 

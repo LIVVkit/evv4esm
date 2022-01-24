@@ -27,9 +27,8 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import absolute_import, division, print_function, unicode_literals
 
-__version_info__ = (0, 2, 5)
+__version_info__ = (0, 3, 0)
 __version__ = '.'.join(str(vi) for vi in __version_info__)
 
 PASS_COLOR = '#389933'
