@@ -100,18 +100,18 @@ def prob_plot(test, ref, n_q, img_file, test_name='Test', ref_name='Ref.',
     # NOTE: Produce unity-based normalization of data for the Q-Q plots because
     #       matplotlib can't handle small absolute values or data ranges. See
     #          https://github.com/matplotlib/matplotlib/issues/6015
-    if not np.allclose(min_, max_, atol=np.finfo(max_).eps):
+    if not np.allclose(min_, max_, rtol=np.finfo(max_).eps):
         norm1 = (ref - min_) / (max_ - min_)
         norm2 = (test - min_) / (max_ - min_)
 
         ax1.scatter(np.percentile(norm1, q), np.percentile(norm2, q),
                     color=pf_color_picker.get(pf, '#1F77B4'), zorder=2)
-        ax3.hist(norm1, bins=n_q, color=pf_color_picker.get(pf, '#1F77B4'))
-        ax4.hist(norm2, bins=n_q, color=pf_color_picker.get(pf, '#1F77B4'))
+        ax3.hist(norm1, bins=n_q, color=pf_color_picker.get(pf, '#1F77B4'), edgecolor="k")
+        ax4.hist(norm2, bins=n_q, color=pf_color_picker.get(pf, '#1F77B4'), edgecolor="k")
 
     # bin both series into equal bins and get cumulative counts for each bin
     bnds = np.linspace(min_, max_, n_q)
-    if not np.allclose(bnds, bnds[0], atol=np.finfo(bnds[0]).eps):
+    if not np.allclose(bnds, bnds[0], rtol=np.finfo(bnds[0]).eps):
         ppxb = pd.cut(ref, bnds)
         ppyb = pd.cut(test, bnds)
 
