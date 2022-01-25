@@ -37,6 +37,7 @@ import re
 import glob
 
 from collections import OrderedDict
+from functools import partial
 
 import numpy as np
 import pandas as pd
@@ -44,36 +45,53 @@ from netCDF4 import Dataset
 
 
 def component_file_instance(component, case_file):
-    search_regex = r'{c}_[0-9]+'.format(c=component)
+    search_regex = r"{c}_[0-9]+".format(c=component)
     result = re.search(search_regex, case_file).group(0)
-    return int(result.replace('{}_'.format(component), ''))
+    return int(result.replace("{}_".format(component), ""))
 
 
-def file_date_str(case_file, style='short'):
-    if style == 'full':
-        search_regex = r'h0\.[0-9]+-[0-9]+-[0-9]+-[0-9]+.nc'
-    elif style == 'short':
-        search_regex = r'h0\.[0-9]+-[0-9]+.nc'
+def file_date_str(case_file, style="short", hist_name="h0"):
+    if style == "full":
+        search_regex = r"{}\.[0-9]+-[0-9]+-[0-9]+-[0-9]+.nc".format(hist_name)
+    elif style == "med":
+        search_regex = r"{}\.[0-9]+-[0-9]+-[0-9]+.nc".format(hist_name)
+    elif style == "short":
+        search_regex = r"{}\.[0-9]+-[0-9]+.nc".format(hist_name)
     else:
-        # FIXME: log warning here
-        search_regex = r'h0\.[0-9]+-[0-9]+.nc'
+        search_regex = r"{}\.[0-9]+-[0-9]+.nc".format(hist_name)
+
     result = re.search(search_regex, case_file).group(0)
-    return result.replace('h0.', '').replace('.nc', '')
+    return result.replace("{}.".format(hist_name), "").replace(".nc", "")
 
 
-def component_monthly_files(dir_, component, ninst):
-    base = '{d}/*{c}_????.h0.????-??.nc'.format(d=dir_, c=component)
+def component_monthly_files(dir_, component, ninst, hist_name="hist", nmonth_max=24, date_style="short"):
+    base = "{d}/*{c}_????.{n}.????-??-??.nc".format(d=dir_, c=component, n=hist_name)
     search = os.path.normpath(base)
     result = sorted(glob.glob(search))
 
     instance_files = OrderedDict()
+    _file_date_str = partial(file_date_str, style=date_style, hist_name=hist_name)
     for ii in range(1, ninst + 1):
-        instance_files[ii] = sorted(filter(lambda x: component_file_instance(component, x) == ii, result),
-                                    key=file_date_str)
-        if len(instance_files[ii]) > 12:
-            instance_files[ii] = instance_files[ii][-12:]
+        instance_files[ii] = sorted(
+            filter(lambda x: component_file_instance(component, x) == ii, result),
+            key=_file_date_str,
+        )
+        if len(instance_files[ii]) > nmonth_max:
+            instance_files[ii] = instance_files[ii][-nmonth_max:]
 
     return instance_files
+
+
+def get_variable_meta(dataset, var_name):
+    try:
+        _name = f": {dataset.variables[var_name].getncattr('long_name')}"
+    except AttributeError:
+        _name = ""
+    try:
+        _units = f" [{dataset.variables[var_name].getncattr('units')}]"
+    except AttributeError:
+        _units = ""
+    return {"long_name": _name, "units": _units}
 
 
 def gather_monthly_averages(ensemble_files, variable_set=None):
@@ -101,16 +119,28 @@ def gather_monthly_averages(ensemble_files, variable_set=None):
                         continue
                     else:
                         m = np.mean(data.variables[var][0, ...])
-                    try:
-                        _name = f": {data.variables[var].getncattr('long_name')}"
-                    except AttributeError:
-                        _name = ""
-                    try:
-                        _units = f" [{data.variables[var].getncattr('units')}]"
-                    except AttributeError:
-                        _units = ""
-                    desc = f"{_name}{_units}"
+
+                    desc = "{long_name}{units}".format(**get_variable_meta(data, var))
                     monthly_avgs.append((case, var, '{:04}'.format(inst), date_str, m, desc))
 
     monthly_avgs = pd.DataFrame(monthly_avgs, columns=('case', 'variable', 'instance', 'date', 'monthly_mean', 'desc'))
     return monthly_avgs
+
+
+def load_mpas_climatology_ensemble(files, field_name, mask_value=None):
+    # Get the first file to set up ensemble array output
+    with Dataset(files[0], "r") as dset:
+        _field = dset.variables[field_name][:].squeeze()
+        var_desc = "{long_name}{units}".format(**get_variable_meta(dset, field_name))
+
+    dims = _field.shape
+    ens_out = np.zeros([*dims, len(files)])
+    ens_out[..., 0] = _field
+    for idx, file_name in enumerate(files[1:]):
+        with Dataset(file_name, "r") as dset:
+            ens_out[..., idx + 1] = dset.variables[field_name][:].squeeze()
+
+    if mask_value:
+        ens_out = np.ma.masked_less(ens_out, mask_value)
+
+    return {"data": ens_out, "desc": var_desc}
