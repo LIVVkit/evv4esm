@@ -28,7 +28,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-__version_info__ = (0, 3, 0)
+__version_info__ = (0, 4, 0)
 __version__ = '.'.join(str(vi) for vi in __version_info__)
 
 PASS_COLOR = '#389933'
