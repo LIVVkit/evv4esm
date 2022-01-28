@@ -64,8 +64,15 @@ def file_date_str(case_file, style="short", hist_name="h0"):
     return result.replace("{}.".format(hist_name), "").replace(".nc", "")
 
 
-def component_monthly_files(dir_, component, ninst, hist_name="hist", nmonth_max=24, date_style="short"):
-    base = "{d}/*{c}_????.{n}.????-??-??.nc".format(d=dir_, c=component, n=hist_name)
+def component_monthly_files(dir_, component, ninst, hist_name="h0", nmonth_max=12, date_style="short"):
+    if date_style == "full":
+        date_search = "????-??-??-??"
+    elif date_style == "med":
+        date_search = "????-??-??"
+    else:
+        date_search = "????-??"
+
+    base = "{d}/*{c}_????.{n}.{ds}.nc".format(d=dir_, c=component, n=hist_name, ds=date_search)
     search = os.path.normpath(base)
     result = sorted(glob.glob(search))
 
