@@ -366,7 +366,7 @@ def main(args):
     # We need to format the variable list so it's has the key we want (_5), and is also
     # formatted to have the correct averaging prefix (timeClimatology_avg)
     var_prefix = "timeClimatology_avg"
-    var_suffix = "_5"
+    var_suffix = ""
     test_vars = [
         f"{var_prefix}_{test_var.format(var_suffix)}" for test_var in args.var_set
     ]
