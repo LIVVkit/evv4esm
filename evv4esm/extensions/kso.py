@@ -456,8 +456,15 @@ def main(args):
         )
 
         img_link = Path(*Path(args.img_dir).parts[-2:], Path(img_file).name)
+
+        # Trim timeClimatology_avg so image captions in gallery are not super long
+        if "timeClimatology_avg" in var:
+            img_title = "_".join(var.split("_")[2:])
+        else:
+            img_title = var
+
         _img = el.Image(
-            var, img_desc, img_link, relative_to="", group=details[var]["h0"]
+            img_title, img_desc, img_link, relative_to="", group=details[var]["h0"]
         )
         images[details[var]["h0"]].append(_img)
 
