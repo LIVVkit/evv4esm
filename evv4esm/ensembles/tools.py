@@ -109,6 +109,19 @@ def prob_plot(test, ref, n_q, img_file, test_name='Test', ref_name='Ref.',
         ax3.hist(norm1, bins=n_q, color=pf_color_picker.get(pf, '#1F77B4'), edgecolor="k")
         ax4.hist(norm2, bins=n_q, color=pf_color_picker.get(pf, '#1F77B4'), edgecolor="k")
 
+        # Check if these distributions are wildly different. If they are, use different
+        # colours for the bottom axis? Otherwise set the scales to be the same [0, 1]
+        if abs(norm1.mean() - norm2.mean()) >= 0.5:
+            ax3.tick_params(axis="x", colors="C0")
+            ax3.spines["bottom"].set_color("C0")
+
+            ax4.tick_params(axis="x", colors="C1")
+            ax4.spines["bottom"].set_color("C1")
+        else:
+            ax3.set_xlim(tuple(norm_rng))
+            ax4.set_xlim(tuple(norm_rng))
+
+
     # bin both series into equal bins and get cumulative counts for each bin
     bnds = np.linspace(min_, max_, n_q)
     if not np.allclose(bnds, bnds[0], rtol=np.finfo(bnds[0]).eps):
@@ -123,6 +136,7 @@ def prob_plot(test, ref, n_q, img_file, test_name='Test', ref_name='Ref.',
 
         ax2.scatter(ppyh.values, ppxh.values,
                     color=pf_color_picker.get(pf, '#1F77B4'), zorder=2)
+
 
     plt.tight_layout()
     plt.savefig(img_file, bbox_inches='tight')
