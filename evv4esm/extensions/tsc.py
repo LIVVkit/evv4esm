@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
-# Copyright (c) 2015-2021 UT-BATTELLE, LLC
+# Copyright (c) 2015-2022 UT-BATTELLE, LLC
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -283,8 +283,14 @@ def main(args):
         # H0: enemble_mean_ΔRMSD_{t,var} is (statistically) zero and therefore, the simulations are identical
         null_hypothesis = ttest.applymap(lambda x: 'Reject' if x[1] < args.p_threshold else 'Accept')
 
-        domains = null_hypothesis.applymap(lambda x: x == 'Reject').any().transform(
-                lambda x: 'Fail' if x is True else 'Pass')
+        domains = (
+            null_hypothesis
+            .query(' seconds >= @args.inspect_times[0] & seconds <= @args.inspect_times[-1]')
+            .applymap(lambda x: x == 'Reject').all().transform(
+                lambda x: 'Fail' if x is True else 'Pass'
+            )
+        )
+
         overall = 'Fail' if domains.apply(lambda x: x == 'Fail').any() else 'Pass'
 
         ttest.reset_index(inplace=True)
@@ -386,7 +392,7 @@ def plot_bit_for_bit(args):
 
     ax.semilogy(xx, yy + 1.0, linestyle='-', marker='o', color=pf_color_picker.get('pass'))
 
-    ax.plot(args.time_slice, [0.5, 0.5], 'k--')
+    ax.plot(args.time_slice, [args.p_threshold * 100] * 2, 'k--')
     ax.text(np.mean(args.time_slice), 10 ** -1, 'Fail', fontsize=15, color=pf_color_picker.get('fail'),
             horizontalalignment='center')
     ax.text(np.mean(args.time_slice), 0.5 * 10 ** 1, 'Pass', fontsize=15, color=pf_color_picker.get('pass'),
