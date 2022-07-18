@@ -284,14 +284,20 @@ def main(args):
         null_hypothesis = ttest.applymap(lambda x: 'Reject' if x[1] < args.p_threshold else 'Accept')
 
         domains = (
-            null_hypothesis
+            # True for rejection of null_hypothesis for each variable at each time
+            ttest.applymap(lambda x: x[1] < args.p_threshold)
+            # Select only times in the inspection window
             .query(' seconds >= @args.inspect_times[0] & seconds <= @args.inspect_times[-1]')
-            .applymap(lambda x: x == 'Reject').all().transform(
-                lambda x: 'Fail' if x is True else 'Pass'
-            )
+            # Create groups of all variables at each time step in the window
+            .groupby("seconds")
+            # Are any variables failing at each time step in the inspection window?
+            .any()
+            # Then check if all time steps in the inspection window have a failing variable
+            .all()
+            # If _all_ time steps are failing then the domain [glob, lnd, ocn] is failing
+            .transform(lambda x: "Fail" if x else "Pass")
         )
-
-        overall = 'Fail' if domains.apply(lambda x: x == 'Fail').any() else 'Pass'
+        overall = 'Fail' if domains[delta_columns].apply(lambda x: x == 'Fail').any() else 'Pass'
 
         ttest.reset_index(inplace=True)
         null_hypothesis.reset_index(inplace=True)
