@@ -366,6 +366,17 @@ def pressure_layer_thickness(dataset):
     dp = np.expand_dims(da * p0, 1) + (np.expand_dims(db, 1) * np.expand_dims(ps, 0))
     return dp, ps
 
+def plot_thresholds(args, axis, x_thr=None, y_thr=None):
+    """Add vertical / horiziontal lines on axis indicating certain thresholds."""
+    if x_thr is None:
+        x_thr = [args.inspect_times[0], args.inspect_times[-1]]
+    if y_thr is None:
+        y_thr = args.p_threshold * 100
+
+    axis.axhline(y_thr, linestyle="--", linewidth=1, color="grey", zorder=-1)
+    for _time in x_thr:
+        axis.axvline(_time, linestyle="--", linewidth=1, color="grey", zorder=-1)
+
 
 def plot_bit_for_bit(args):
     failing_img_file = os.path.relpath(os.path.join(args.img_dir, 'failing_timeline.png'), os.getcwd())
@@ -375,6 +386,7 @@ def plot_bit_for_bit(args):
     xx = np.arange(0, args.time_slice[1] + args.time_slice[0],  args.time_slice[0])
     yy = np.zeros(xx.shape)
     ax.plot(xx, yy, linestyle='-', marker='o', color=pf_color_picker.get('pass'))
+    plot_thresholds(args, ax, y_thr=1)
 
     ax.set_ybound(-1, 20)
     ax.set_yticks(np.arange(0, 24, 4))
@@ -387,18 +399,29 @@ def plot_bit_for_bit(args):
     plt.savefig(failing_img_file, bbox_inches='tight')
     plt.close(fig)
 
-    failing_img_caption = 'The number of failing variables across both domains (land and ' \
-                          'ocean) as a function of model integration time.'
+    failing_img_caption = (
+        "The number of failing variables across both domains (land and ocean) as a "
+        "function of model integration time. The dashed horizontal line represents the "
+        "failing threshold of 1 variable, the vertical dashed lines represent the inspection "
+        f"window of {args.inspect_times[0]} - {args.inspect_times[-1]} s."
+    )
     failing_img_link = Path(*Path(args.img_dir).parts[-2:], Path(failing_img_file).name)
-    failing_img = el.Image('Timeline of failing variables', failing_img_caption, failing_img_link, height=300, relative_to="")
+    failing_img = el.Image(
+        'Timeline of failing variables',
+        failing_img_caption,
+        failing_img_link,
+        height=300,
+        relative_to="",
+        group="Timelines"
+    )
 
     pmin_img_file = os.path.relpath(os.path.join(args.img_dir, 'pmin_timeline.png'), os.getcwd())
     fig, ax = plt.subplots(figsize=(10, 8))
     plt.rc('font', family='serif')
 
     ax.semilogy(xx, yy + 1.0, linestyle='-', marker='o', color=pf_color_picker.get('pass'))
+    plot_thresholds(args, ax)
 
-    ax.plot(args.time_slice, [args.p_threshold * 100] * 2, 'k--')
     ax.text(np.mean(args.time_slice), 10 ** -1, 'Fail', fontsize=15, color=pf_color_picker.get('fail'),
             horizontalalignment='center')
     ax.text(np.mean(args.time_slice), 0.5 * 10 ** 1, 'Pass', fontsize=15, color=pf_color_picker.get('pass'),
@@ -417,14 +440,18 @@ def plot_bit_for_bit(args):
     plt.savefig(pmin_img_file, bbox_inches='tight')
     plt.close(fig)
 
-    pmin_img_caption = 'The minimum P value of all variables in both domains (land and ' \
-                       'ocean) as a function of model integration time plotted with ' \
-                       'a logarithmic y-scale. The dashed grey line indicates the ' \
-                       'threshold for assigning an overall pass or fail to a test ' \
-                       'ensemble; see Wan et al. (2017) eqn. 8.'
-    # pmin_img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(pmin_img_file))
+    pmin_img_caption = (
+        "The minimum P value of all variables in both domains (land and ocean) as a "
+        "function of model integration time plotted with a logarithmic y-scale. The "
+        "horizontal dashed grey line indicates the threshold for assigning an overall "
+        "pass or fail to a test ensemble; the vertical dashed lines represent the "
+        f"inspection window of {args.inspect_times[0]} - {args.inspect_times[-1]} s. "
+        "see Wan et al. (2017) eqn. 8"
+    )
     pmin_img_link = Path(*Path(args.img_dir).parts[-2:], Path(pmin_img_file).name)
-    pmin_img = el.Image('Timeline of P_{min}', pmin_img_caption, pmin_img_link, height=300, relative_to="")
+    pmin_img = el.Image(
+        'Timeline of P_{min}', pmin_img_caption, pmin_img_link, height=300, relative_to="", group="Timelines"
+    )
 
     return [failing_img, pmin_img]
 
@@ -445,16 +472,21 @@ def plot_failing_variables(args, null_hypothesis, img_file):
 
     ax.set_ylabel('Number of failing variables')
     ax.set_xlabel('Integration time (s)')
+    plot_thresholds(args, ax, y_thr=1)
 
     plt.tight_layout()
     plt.savefig(img_file, bbox_inches='tight')
     plt.close(fig)
 
-    img_caption = 'The number of failing variables across both domains (land and ' \
-                  'ocean) as a function of model integration time.'
+    img_caption = (
+        "The number of failing variables across both domains (land and ocean) as a "
+        "function of model integration time. The dashed horizontal line represents the "
+        "failing threshold of 1 variable, the vertical dashed lines represent the "
+        f"inspection window of {args.inspect_times[0]} - {args.inspect_times[-1]} s."
+    )
     img_link = Path(*Path(args.img_dir).parts[-2:], Path(img_file).name)
     img = el.Image(
-        'Timeline of failing variables', img_caption, img_link, height=300, relative_to=""
+        'Timeline of failing variables', img_caption, img_link, height=300, relative_to="", group="Timelines"
     )
     return img
 
@@ -474,14 +506,16 @@ def plot_pmin(args, ttest, img_file):
     elif fails.empty:
         passes.plot(logy=True, linestyle='-', marker='o', color=pf_color_picker.get('pass'))
     else:
-        first_fail = fails.index[0]
-        pdata.loc[:first_fail].plot(logy=True, linestyle='-', marker='o', color=pf_color_picker.get('pass'))
-        pdata.loc[first_fail:].plot(logy=True, linestyle='-', marker='o', color=pf_color_picker.get('fail'))
+        pdata.plot(logy=True, linestyle="-", color="black")
+        passes.plot(logy=True, linestyle="None", marker="o", color=pf_color_picker.get("pass"))
+        fails.plot(logy=True, linestyle="None", marker="o", color=pf_color_picker.get("fail"))
 
-    ax.plot(args.time_slice, [0.5, 0.5], 'k--')
-    ax.text(np.mean(args.time_slice), 10 ** -1, 'Fail', fontsize=15, color=pf_color_picker.get('fail'),
+    plot_thresholds(args, ax)
+
+    inspect_window = [args.inspect_times[0], args.inspect_times[-1]]
+    ax.text(np.mean(inspect_window), 10 ** -1, 'Fail', fontsize=15, color=pf_color_picker.get('fail'),
             horizontalalignment='center')
-    ax.text(np.mean(args.time_slice), 10 ** 0, 'Pass', fontsize=15, color=pf_color_picker.get('pass'),
+    ax.text(np.mean(inspect_window), 10 ** 0, 'Pass', fontsize=15, color=pf_color_picker.get('pass'),
             horizontalalignment='center')
 
     ax.set_ybound(100, 10 ** -15)
@@ -497,14 +531,18 @@ def plot_pmin(args, ttest, img_file):
     plt.savefig(img_file, bbox_inches='tight')
     plt.close(fig)
 
-    img_caption = 'The minimum P value of all variables in both domains (land and ' \
-                  'ocean) as a function of model integration time plotted with ' \
-                  'a logarithmic y-scale. The dashed grey line indicates the ' \
-                  'threshold for assigning an overall pass or fail to a test ' \
-                  'ensemble; see Wan et al. (2017) eqn. 8.'
+    img_caption = (
+        "The minimum P value of all variables in both domains (land and ocean) as a "
+        "function of model integration time plotted with a logarithmic y-scale. The "
+        "horizontal dashed grey line indicates the threshold for assigning an overall "
+        "pass or fail to a test ensemble; the vertical dashed lines represent the "
+        f"inspection window of {args.inspect_times[0]} - {args.inspect_times[-1]} s. "
+        "see Wan et al. (2017) eqn. 8"
+    )
+
     # img_link = os.path.join(os.path.basename(args.img_dir), os.path.basename(img_file))
     img_link = Path(*Path(args.img_dir).parts[-2:], Path(img_file).name)
-    img = el.Image('Timeline of P_{min}', img_caption, img_link, height=300, relative_to="")
+    img = el.Image('Timeline of P_{min}', img_caption, img_link, height=300, relative_to="", group="Timelines")
     return img
 
 
@@ -578,7 +616,7 @@ def boxplot_delta_rmsd(args, delta_rmsd, null_hypothesis, img_file_format):
                                                          cpass=human_color_names['pass'][0])
         img_link = Path(*Path(args.img_dir).parts[-2:], Path(img_file).name)
         img_list.append(el.Image('Boxplot of normalized ensemble ΔRMSD at {}s'.format(time),
-                                 img_caption, img_link, height=300, relative_to=""))
+                                 img_caption, img_link, height=300, relative_to="", group="Boxplots"))
     return img_list
 
 
@@ -692,7 +730,7 @@ def errorbars_delta_rmsd(args, delta_rmsd, null_hypothesis, img_file_format):
                                                          cpass=human_color_names['pass'][0])
         img_link = Path(*Path(args.img_dir).parts[-2:], Path(img_file).name)
         img_list.append(el.Image('Distribution of the ensemble ΔRMSD at {}s'.format(time),
-                                 img_caption, img_link, height=300, relative_to=""))
+                                 img_caption, img_link, height=300, relative_to="", group="Boxplots"))
     return img_list
 
 
