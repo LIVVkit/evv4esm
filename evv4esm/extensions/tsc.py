@@ -402,7 +402,7 @@ def plot_bit_for_bit(args):
     failing_img_caption = (
         "The number of failing variables across both domains (land and ocean) as a "
         "function of model integration time. The dashed horizontal line represents the "
-        "failing threshold of 1 variable, the vertical dashed lines represent the inspection "
+        "failing threshold of 1 variable, the dashed vertical lines represent the inspection "
         f"window of {args.inspect_times[0]} - {args.inspect_times[-1]} s."
     )
     failing_img_link = Path(*Path(args.img_dir).parts[-2:], Path(failing_img_file).name)
@@ -443,8 +443,8 @@ def plot_bit_for_bit(args):
     pmin_img_caption = (
         "The minimum P value of all variables in both domains (land and ocean) as a "
         "function of model integration time plotted with a logarithmic y-scale. The "
-        "horizontal dashed grey line indicates the threshold for assigning an overall "
-        "pass or fail to a test ensemble; the vertical dashed lines represent the "
+        "dashed horizontal grey line indicates the threshold for assigning an overall "
+        "pass or fail to a test ensemble; the dashed vertical lines represent the "
         f"inspection window of {args.inspect_times[0]} - {args.inspect_times[-1]} s. "
         "see Wan et al. (2017) eqn. 8"
     )
@@ -481,7 +481,7 @@ def plot_failing_variables(args, null_hypothesis, img_file):
     img_caption = (
         "The number of failing variables across both domains (land and ocean) as a "
         "function of model integration time. The dashed horizontal line represents the "
-        "failing threshold of 1 variable, the vertical dashed lines represent the "
+        "failing threshold of 1 variable, the dashed vertical lines represent the "
         f"inspection window of {args.inspect_times[0]} - {args.inspect_times[-1]} s."
     )
     img_link = Path(*Path(args.img_dir).parts[-2:], Path(img_file).name)
@@ -534,8 +534,8 @@ def plot_pmin(args, ttest, img_file):
     img_caption = (
         "The minimum P value of all variables in both domains (land and ocean) as a "
         "function of model integration time plotted with a logarithmic y-scale. The "
-        "horizontal dashed grey line indicates the threshold for assigning an overall "
-        "pass or fail to a test ensemble; the vertical dashed lines represent the "
+        "dashed horizontal grey line indicates the threshold for assigning an overall "
+        "pass or fail to a test ensemble; the dashed vertical lines represent the "
         f"inspection window of {args.inspect_times[0]} - {args.inspect_times[-1]} s. "
         "see Wan et al. (2017) eqn. 8"
     )
