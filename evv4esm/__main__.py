@@ -59,6 +59,14 @@ def parse_args(args=None):
                                        ])
                         )
 
+    parser.add_argument('-p', '--pool-size',
+                        nargs='?',
+                        type=int,
+                        default=(options.mp.cpu_count() - 1 or 1),
+                        help='The number of multiprocessing processes to run '
+                             'analyses in. If zero, processes will run serially '
+                             'outside of the multiprocessing module.')
+
     parser.add_argument('--version',
                         action='version',
                         version='EVV {}'.format(evv4esm.__version__),
@@ -73,7 +81,6 @@ def parse_args(args=None):
     from evv4esm import resources
     args.livv_resource_dir = livvkit.resource_dir
     livvkit.resource_dir = os.sep.join(resources.__path__)
-
     return args
 
 
@@ -106,6 +113,7 @@ def main(cl_args=None):
     from livvkit.util import functions
     from livvkit import elements
 
+    livvkit.pool_size = args.pool_size
     if args.extensions:
         functions.setup_output()
         summary_elements = []
