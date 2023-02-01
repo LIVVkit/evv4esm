@@ -1,0 +1,9 @@
+{
+    "default": [
+        "activeTracers{}_salinity",
+        "activeTracers{}_temperature",
+        "ssh{}",
+        "velocityMeridional{}",
+        "velocityZonal{}"
+    ]
+}
