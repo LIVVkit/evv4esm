@@ -142,11 +142,12 @@ def load_mpas_climatology_ensemble(files, field_name, mask_value=None):
         var_desc = "{long_name}{units}".format(**get_variable_meta(dset, field_name))
 
     dims = _field.shape
-    ens_out = np.zeros([*dims, len(files)])
+    ens_out = np.ma.zeros([*dims, len(files)])
     ens_out[..., 0] = _field
     for idx, file_name in enumerate(files[1:]):
         with Dataset(file_name, "r") as dset:
-            ens_out[..., idx + 1] = dset.variables[field_name][:].squeeze()
+            _field = dset.variables[field_name][:].squeeze()
+            ens_out[..., idx + 1] = _field
 
     if mask_value:
         ens_out = np.ma.masked_less(ens_out, mask_value)

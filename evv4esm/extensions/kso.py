@@ -376,7 +376,9 @@ def main(args):
     # performing the test (across ensemble members) to be the last dimension
     # (e.g. [nCells, nLevels, nEns]) this is why load_mpas_climatology_ensemble
     # returns data in this way
-    ks_test = np.vectorize(stats.mstats.ks_2samp, signature="(n),(n)->(),()")
+    ks_test = np.vectorize(
+        stats.mstats.ks_2samp, signature="(n),(n)->(),()", excluded=["method"]
+    )
 
     images = {"accept": [], "reject": [], "-": []}
     details = LIVVDict()
@@ -387,8 +389,13 @@ def main(args):
 
         annuals_1 = var_1["data"]
         annuals_2 = var_2["data"]
+        if isinstance(annuals_1, np.ma.MaskedArray) and isinstance(
+            annuals_2, np.ma.MaskedArray
+        ):
+            _, p_val = ks_test(annuals_1.filled(), annuals_2.filled(), method="asymp")
+        else:
+            _, p_val = ks_test(annuals_1, annuals_2, method="asymp")
 
-        _, p_val = ks_test(annuals_1, annuals_2)
         null_reject_pre_correct = np.sum(np.where(p_val <= args.alpha, 1, 0))
         _, p_val = smm.fdrcorrection(
             p_val.flatten(), alpha=args.alpha, method="indep", is_sorted=False
@@ -417,7 +424,6 @@ def main(args):
         mask_value = -0.9999e33
         annuals_1 = np.ma.masked_less(annuals_1, mask_value)
         annuals_2 = np.ma.masked_less(annuals_2, mask_value)
-
         details[var]["mean (test case, ref. case)"] = (
             annuals_1.mean(),
             annuals_2.mean(),
