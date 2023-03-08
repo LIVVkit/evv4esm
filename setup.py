@@ -83,6 +83,7 @@ setup(
           'netCDF4',
           'matplotlib',
           'pybtex',
+          'statsmodels',
           ],
 
       packages=[
