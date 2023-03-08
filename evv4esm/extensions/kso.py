@@ -377,7 +377,7 @@ def main(args):
     # (e.g. [nCells, nLevels, nEns]) this is why load_mpas_climatology_ensemble
     # returns data in this way
     ks_test = np.vectorize(
-        stats.mstats.ks_2samp, signature="(n),(n)->(),()", excluded=["method"]
+        stats.mstats.ks_2samp, signature="(n),(n)->(),()"
     )
 
     images = {"accept": [], "reject": [], "-": []}
@@ -392,9 +392,9 @@ def main(args):
         if isinstance(annuals_1, np.ma.MaskedArray) and isinstance(
             annuals_2, np.ma.MaskedArray
         ):
-            _, p_val = ks_test(annuals_1.filled(), annuals_2.filled(), method="asymp")
+            _, p_val = ks_test(annuals_1.filled(), annuals_2.filled())
         else:
-            _, p_val = ks_test(annuals_1, annuals_2, method="asymp")
+            _, p_val = ks_test(annuals_1, annuals_2)
 
         null_reject_pre_correct = np.sum(np.where(p_val <= args.alpha, 1, 0))
         _, p_val = smm.fdrcorrection(
