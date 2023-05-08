@@ -72,8 +72,7 @@ def component_monthly_files(dir_, component, ninst, hist_name="h0", nmonth_max=1
     else:
         date_search = "????-??"
 
-def component_monthly_files(dir_, component, ninst, hist_name="hist", nmonth_max=24, date_style="short"):
-    base = "{d}/*{c}_????.{n}.????-??-??.nc".format(d=dir_, c=component, n=hist_name)
+    base = "{d}/*{c}_????.{n}.{ds}.nc".format(d=dir_, c=component, n=hist_name, ds=date_search)
     search = os.path.normpath(base)
     result = sorted(glob.glob(search))
 
