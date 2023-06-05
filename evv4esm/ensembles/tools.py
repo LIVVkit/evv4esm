@@ -29,12 +29,13 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """General tools for working with ensembles."""
-
+import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
 
-from evv4esm import pf_color_picker
+from evv4esm import pf_color_picker, light_pf_color_picker
 
 def monthly_to_annual_avg(var_data, cal='ignore'):
     if len(var_data) != 12:
@@ -50,17 +51,36 @@ def monthly_to_annual_avg(var_data, cal='ignore'):
     return avg
 
 
-def prob_plot(test, ref, n_q, img_file, test_name='Test', ref_name='Ref.',
-              thing='annual global averages', pf=None):
-    # NOTE: Following the methods described in
-    #       https://stackoverflow.com/questions/43285752
-    #       to create the Q-Q and P-P plots
+def prob_plot(
+    test,
+    ref,
+    n_q,
+    img_file,
+    test_name='Test',
+    ref_name='Ref.',
+    thing='annual global averages',
+    pf=None,
+    combine_hist=False
+):
     q = np.linspace(0, 100, n_q + 1)
     all_ = np.concatenate((test, ref))
     min_ = np.min(all_)
     max_ = np.max(all_)
 
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(10, 10))
+    if combine_hist:
+        fig = plt.figure(figsize=(10, 10))
+        gs = GridSpec(2, 2)
+        ax1 = fig.add_subplot(gs[0, 0])
+        ax2 = fig.add_subplot(gs[0, 1])
+        ax3 = fig.add_subplot(gs[1, :])
+        axes = [ax1, ax2, ax3]
+    else:
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(10, 10))
+        axes = [ax1, ax2, ax3, ax4]
+
+    _var = os.path.split(img_file)[-1].split(".")[0]
+    fig.suptitle(_var)
+
     plt.rc('font', family='serif')
 
     ax1.set_title('Q-Q Plot')
@@ -71,14 +91,6 @@ def prob_plot(test, ref, n_q, img_file, test_name='Test', ref_name='Ref.',
     ax2.set_title('P-P Plot')
     ax2.set_xlabel('{} cdf'.format(test_name))
     ax2.set_ylabel('{} cdf'.format(ref_name))
-
-    ax3.set_title('{} pdf'.format(ref_name))
-    ax3.set_xlabel('Unity-based normalization of {}'.format(thing))
-    ax3.set_ylabel('Frequency')
-
-    ax4.set_title('{} pdf'.format(test_name))
-    ax4.set_xlabel('Unity-based normalization of {}'.format(thing))
-    ax4.set_ylabel('Frequency')
 
     norm_rng = [0.0, 1.0]
     ax1.plot(norm_rng, norm_rng, 'gray', zorder=1)
@@ -91,40 +103,70 @@ def prob_plot(test, ref, n_q, img_file, test_name='Test', ref_name='Ref.',
     ax2.set_ylim(tuple(norm_rng))
     ax2.autoscale()
 
+    if combine_hist:
+        ax3.set_title('Ensemble histogram')
+    else:
+        ax3.set_title('{} pdf'.format(ref_name))
+
+        ax4.set_title('{} pdf'.format(test_name))
+        ax4.set_xlabel('Unity-based normalization of {}'.format(thing))
+        ax4.set_ylabel('Frequency')
+        ax4.set_xlim(tuple(norm_rng))
+        ax4.autoscale()
+
+    ax3.set_ylabel('Frequency')
+    ax3.set_xlabel('Unity-based normalization of {}'.format(thing))
+
     ax3.set_xlim(tuple(norm_rng))
     ax3.autoscale()
-
-    ax4.set_xlim(tuple(norm_rng))
-    ax4.autoscale()
 
     # NOTE: Produce unity-based normalization of data for the Q-Q plots because
     #       matplotlib can't handle small absolute values or data ranges. See
     #          https://github.com/matplotlib/matplotlib/issues/6015
-    if not np.allclose(min_, max_, rtol=np.finfo(max_).eps):
+    bnds = np.linspace(min_, max_, n_q)
+    if not np.allclose(bnds, bnds[0], rtol=np.finfo(bnds[0]).eps, atol=np.finfo(bnds[0]).eps):
         norm1 = (ref - min_) / (max_ - min_)
         norm2 = (test - min_) / (max_ - min_)
 
-        ax1.scatter(np.percentile(norm1, q), np.percentile(norm2, q),
-                    color=pf_color_picker.get(pf, '#1F77B4'), zorder=2)
-        ax3.hist(norm1, bins=n_q, color=pf_color_picker.get(pf, '#1F77B4'), edgecolor="k")
-        ax4.hist(norm2, bins=n_q, color=pf_color_picker.get(pf, '#1F77B4'), edgecolor="k")
-
-        # Check if these distributions are wildly different. If they are, use different
-        # colours for the bottom axis? Otherwise set the scales to be the same [0, 1]
-        if abs(norm1.mean() - norm2.mean()) >= 0.5:
-            ax3.tick_params(axis="x", colors="C0")
-            ax3.spines["bottom"].set_color("C0")
-
-            ax4.tick_params(axis="x", colors="C1")
-            ax4.spines["bottom"].set_color("C1")
+        # Create P-P plot
+        ax1.scatter(
+            np.percentile(norm1, q),
+            np.percentile(norm2, q),
+            color=pf_color_picker.get(pf, '#1F77B4'),
+            zorder=2
+        )
+        if combine_hist:
+            # Plot joint histogram (groups test / ref side-by-side for each bin)
+            ax3.hist(
+                [norm1, norm2],
+                bins=n_q,
+                edgecolor="k",
+                label=[test_name, ref_name],
+                color=[
+                    pf_color_picker.get(pf, "#1F77B4"),
+                    light_pf_color_picker.get(pf, "#B55D1F")
+                ],
+                zorder=5,
+            )
+            ax3.legend()
         else:
-            ax3.set_xlim(tuple(norm_rng))
-            ax4.set_xlim(tuple(norm_rng))
+            ax3.hist(norm1, bins=n_q, color=pf_color_picker.get(pf, '#1F77B4'), edgecolor="k")
+            ax4.hist(norm2, bins=n_q, color=pf_color_picker.get(pf, '#1F77B4'), edgecolor="k")
 
+            # Check if these distributions are wildly different. If they are, use different
+            # colours for the bottom axis? Otherwise set the scales to be the same [0, 1]
+            if abs(norm1.mean() - norm2.mean()) >= 0.5:
+                ax3.tick_params(axis="x", colors="C0")
+                ax3.spines["bottom"].set_color("C0")
 
-    # bin both series into equal bins and get cumulative counts for each bin
-    bnds = np.linspace(min_, max_, n_q)
-    if not np.allclose(bnds, bnds[0], rtol=np.finfo(bnds[0]).eps):
+                ax4.tick_params(axis="x", colors="C1")
+                ax4.spines["bottom"].set_color("C1")
+            else:
+                ax4.set_xlim(tuple(norm_rng))
+
+        ax3.set_xlim(tuple(norm_rng))
+
+        # bin both series into equal bins and get cumulative counts for each bin
         ppxb = pd.cut(ref, bnds)
         ppyb = pd.cut(test, bnds)
 
@@ -136,9 +178,50 @@ def prob_plot(test, ref, n_q, img_file, test_name='Test', ref_name='Ref.',
 
         ax2.scatter(ppyh.values, ppxh.values,
                     color=pf_color_picker.get(pf, '#1F77B4'), zorder=2)
+    else:
+        # Define a text box if the data are not plottable
+        const_axis_text = {
+            "x": 0.5,
+            "y": 0.5,
+            "s": f"CONSTANT FIELD\nMIN: {min_:.4e}\nMAX: {max_:.4e}",
+            "horizontalalignment": "center",
+            "verticalalignment": "center",
+            "backgroundcolor": ax1.get_facecolor()
+        }
+        ax1.text(**const_axis_text)
+        ax2.text(**const_axis_text)
+        if combine_hist:
+            ax3.hist(
+                [test, ref],
+                bins=n_q,
+                edgecolor="k",
+                label=[test_name, ref_name],
+                color=[pf_color_picker.get(pf, "#1F77B4"), light_pf_color_picker.get(pf, "#B55D1F")],
+                zorder=5,
+            )
+            ax3.legend()
+        else:
+            ax3.hist(
+                test,
+                bins=n_q,
+                edgecolor="k",
+                color=pf_color_picker.get(pf, "#1F77B4"),
+                zorder=5,
+            )
+            ax4.hist(
+                ref,
+                bins=n_q,
+                edgecolor="k",
+                label=[test_name, ref_name],
+                color=pf_color_picker.get(pf, "#1F77B4"),
+                zorder=5,
+            )
 
+    for axis in axes:
+        axis.grid(visible=True, ls="--", lw=0.5, zorder=-1)
 
     plt.tight_layout()
+
     plt.savefig(img_file, bbox_inches='tight')
 
     plt.close(fig)
