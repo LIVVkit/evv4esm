@@ -32,13 +32,35 @@
 /**
  * When the page is loaded, do some stuff
  */
-$(document).ready(function() {
+$(document).ready(function () {
     drawNav();
     drawContent();
 });
 
-$(window).load(function() {
+$(window).load(function () {
     $('img.caption').captionjs();
+
+    // Make tables sortable: see:
+    // https://stackoverflow.com/questions/14267781/sorting-html-table-with-javascript
+    const getCellValue = (tr, idx) => tr.children[idx].innerText || tr.children[idx].textContent;
+
+    const comparer = (idx, asc) => (a, b) => ((v1, v2) =>
+        v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2) ? v1 - v2 : v1.toString().localeCompare(v2)
+    )(getCellValue(asc ? a : b, idx), getCellValue(asc ? b : a, idx));
+
+    // do the work...
+    document.querySelectorAll('th').forEach(
+        th => th.addEventListener(
+            'click', (
+            () => {
+                const table = th.closest('table');
+                Array.from(table.querySelectorAll('tr:nth-child(n+2)'))
+                    .sort(comparer(Array.from(th.parentNode.children).indexOf(th), this.asc = !this.asc))
+                    .forEach(tr => table.appendChild(tr));
+            }
+        )
+        )
+    );
 });
 
 
@@ -49,17 +71,17 @@ $(window).load(function() {
 function drawNav() {
     // Get the dataset, to do so the html page must have the `indexPath` variable defined
     var html = "";
-    var getUrl = window.location.href.substr(0,window.location.href.lastIndexOf('/')+1);
+    var getUrl = window.location.href.substr(0, window.location.href.lastIndexOf('/') + 1);
     var data = loadJSON(getUrl + indexPath + '/index.json');
     data = data["Page"];
     // Go through each category: numerics, verification, performance, and validation
     for (var el_idx in data["elements"]) {
         if (data["elements"][el_idx] != null && Object.keys(data["elements"][el_idx]["Table"]["data"]).length > 0) {
             html += "<h3>" + data["elements"][el_idx]["Table"]["title"] + "</h3>\n";
-            var testList = Array.from(new Set( data["elements"][el_idx]["Table"]["index"])).sort();
+            var testList = Array.from(new Set(data["elements"][el_idx]["Table"]["index"])).sort();
             for (var idx in testList) {
                 html += "<a href=" + indexPath + "/" + data["elements"][el_idx]["Table"]["title"].toLowerCase() +
-                        "/" + testList[idx] + ".html>" + testList[idx] + "</a></br>";
+                    "/" + testList[idx] + ".html>" + testList[idx] + "</a></br>";
             }
         }
     }
@@ -74,7 +96,7 @@ function drawNav() {
 function drawContent() {
     // Load the data and add header information
     var html_file = window.location.href.substr(
-            window.location.href.lastIndexOf("/")+1).split("#")[0].replace(".html", "");
+        window.location.href.lastIndexOf("/") + 1).split("#")[0].replace(".html", "");
     // Assume index.html if empty page name
     if (html_file === "") {
         html_file = "index";
@@ -95,7 +117,7 @@ function loadJSON(path) {
         'global': false,
         'url': path,
         'dataType': "json",
-        'success': function(json) {
+        'success': function (json) {
             data = json;
         }
     });
