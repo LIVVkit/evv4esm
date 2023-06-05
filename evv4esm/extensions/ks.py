@@ -43,6 +43,7 @@ critical number of rejecting variables. The critical value, α, is obtained from
 an empirically derived approximate null distribution of t using resampling
 techniques.
 """
+ALPHA = 0.05
 
 import argparse
 import os
@@ -58,6 +59,7 @@ from livvkit import elements as el
 from livvkit.util import functions as fn
 from livvkit.util.LIVVDict import LIVVDict
 from scipy import stats
+from statsmodels.stats import multitest as smm
 
 from evv4esm import EVVException, human_color_names
 from evv4esm.ensembles import e3sm
@@ -147,13 +149,18 @@ def parse_args(args=None):
 
 def col_fmt(dat):
     """Format results for table output."""
-    if dat is not None:
+    if dat is None:
+        _out = "-"
+    elif isinstance(dat, (tuple, list)):
         try:
             _out = "{:.3e}, {:.3e}".format(*dat)
         except TypeError:
             _out = dat
+    elif isinstance(dat, float):
+        _out = f"{dat:.3e}"
     else:
         _out = "-"
+
     return _out
 
 def run(name, config):
@@ -181,10 +188,14 @@ def run(name, config):
     table_data = pd.DataFrame(details).T
     _hdrs = [
         "h0",
-        "K-S test (D, p)",
-        "T test (t, p)",
-        "mean (test case, ref. case)",
-        "std (test case, ref. case)",
+        "K-S test stat",
+        "K-S test p-val",
+        "T test stat",
+        "T test p-val",
+        "mean test case",
+        "mean ref. case",
+        "std test case",
+        "std ref. case",
     ]
     table_data = table_data[_hdrs]
     for _hdr in _hdrs[1:]:
@@ -206,17 +217,19 @@ def run(name, config):
         }
     )
     rejects = [var for var, dat in details.items() if dat["h0"] == "reject"]
+    critical = ALPHA * len(details.keys())
 
     results = el.Table(
         title="Results",
         data=OrderedDict(
             {
-                'Test status': ['pass' if len(rejects) < args.critical else 'fail'],
+                # 'Test status': ['pass' if len(rejects) < args.critical else 'fail'],
+                'Test status': ['pass' if len(rejects) < critical else 'fail'],
                 'Variables analyzed': [len(details.keys())],
                 'Rejecting': [len(rejects)],
-                'Critical value': [int(args.critical)],
+                'Critical value': [int(critical)],
                 'Ensembles': [
-                    'statistically identical' if len(rejects) < args.critical else 'statistically different'
+                    'statistically identical' if len(rejects) < critical else 'statistically different'
                 ]
             }
         )
@@ -291,6 +304,70 @@ def populate_metadata():
     return metadata
 
 
+def compute_details(annual_avgs, common_vars, args):
+    """Compute the detail table, perform a T Test and K-S test for each variable.
+    """
+    details = LIVVDict()
+    for var in sorted(common_vars):
+        annuals_1 = annual_avgs.query('case == @args.test_case & variable == @var').monthly_mean.values
+        annuals_2 = annual_avgs.query('case == @args.ref_case & variable == @var').monthly_mean.values
+
+        ttest_t, ttest_p = stats.ttest_ind(
+            annuals_1, annuals_2, equal_var=False, nan_policy=str('omit')
+        )
+        ks_d, ks_p = stats.ks_2samp(annuals_1, annuals_2)
+
+        if np.isnan([ttest_t, ttest_p]).any() or np.isinf([ttest_t, ttest_p]).any():
+            ttest_t = None
+            ttest_p = None
+
+        details[var]["T test stat"] = ttest_t
+        details[var]["T test p-val"] = ttest_p
+
+        details[var]['K-S test stat'] = ks_d
+        details[var]['K-S test p-val'] = ks_p
+
+        details[var]['mean test case'] = annuals_1.mean()
+        details[var]['mean ref. case'] = annuals_2.mean()
+
+        details[var]['max test case'] = annuals_1.max()
+        details[var]['max ref. case'] = annuals_2.max()
+
+        details[var]['min test case'] = annuals_1.min()
+        details[var]['min ref. case'] = annuals_2.min()
+
+        details[var]['std test case'] = annuals_1.std()
+        details[var]['std ref. case'] = annuals_2.std()
+
+    # Now that the details have been computed, perform the FDR correction
+    # Convert to a Dataframe, transposed so that the index is the variable name
+    detail_df = pd.DataFrame(details).T
+    (
+        detail_df["h0_c"],
+        detail_df["pval_c"],
+        detail_df["alpha_out"],
+        detail_df["alpha_in"]
+    ) = zip(*detail_df["K-S test p-val"].apply(
+        smm.multipletests, alpha=ALPHA, method="holm", is_sorted=False)
+    )
+
+    for _key in ["h0_c", "pval_c"]:
+        # These variables return lists not floats, fix that
+        detail_df[_key] = detail_df[_key].apply(lambda x: x[0])
+
+    for var in common_vars:
+        details[var]["K-S test p-val"] = detail_df.loc[var, "pval_c"]
+
+        if details[var]['T test stat'] is None:
+            details[var]['h0'] = '-'
+        elif detail_df.loc[var, "h0_c"]:
+            details[var]['h0'] = 'reject'
+        else:
+            details[var]['h0'] = 'accept'
+
+    return details
+
+
 def main(args):
     ens_files, key1, key2 = case_files(args)
     if args.test_case == args.ref_case:
@@ -309,36 +386,24 @@ def main(args):
         raise EVVException('No common variables between {} and {} to analyze!'.format(args.test_case, args.ref_case))
 
     images = {"accept": [], "reject": [], "-": []}
-    details = LIVVDict()
+    details = compute_details(annual_avgs, common_vars, args)
+
     for var in sorted(common_vars):
         annuals_1 = annual_avgs.query('case == @args.test_case & variable == @var').monthly_mean.values
         annuals_2 = annual_avgs.query('case == @args.ref_case & variable == @var').monthly_mean.values
 
-        details[var]['T test (t, p)'] = stats.ttest_ind(annuals_1, annuals_2,
-                                                        equal_var=False, nan_policy=str('omit'))
-        if np.isnan(details[var]['T test (t, p)']).any() or np.isinf(details[var]['T test (t, p)']).any():
-            details[var]['T test (t, p)'] = (None, None)
-
-        details[var]['K-S test (D, p)'] = stats.ks_2samp(annuals_1, annuals_2)
-
-        details[var]['mean (test case, ref. case)'] = (annuals_1.mean(), annuals_2.mean())
-
-        details[var]['max (test case, ref. case)'] = (annuals_1.max(), annuals_2.max())
-
-        details[var]['min (test case, ref. case)'] = (annuals_1.min(), annuals_2.min())
-
-        details[var]['std (test case, ref. case)'] = (annuals_1.std(), annuals_2.std())
-
-        if details[var]['T test (t, p)'][0] is None:
-            details[var]['h0'] = '-'
-        elif details[var]['K-S test (D, p)'][1] < 0.05:
-            details[var]['h0'] = 'reject'
-        else:
-            details[var]['h0'] = 'accept'
-
         img_file = os.path.relpath(os.path.join(args.img_dir, var + '.png'), os.getcwd())
-        prob_plot(annuals_1, annuals_2, 20, img_file, test_name=args.test_case, ref_name=args.ref_case,
-                  pf=details[var]['h0'])
+        # prob_plot(annuals_1, annuals_2, 20, img_file, test_name=args.test_case, ref_name=args.ref_case,
+        prob_plot(
+            annuals_1,
+            annuals_2,
+            annuals_1.shape[0] // 2,
+            img_file,
+            test_name=args.test_case,
+            ref_name=args.ref_case,
+            pf=details[var]['h0'],
+            combine_hist=True
+        )
         _desc = monthly_avgs.query('case == @args.test_case & variable == @var').desc.values[0]
         img_desc = 'Mean annual global average of {var}{desc} for <em>{testcase}</em> ' \
                    'is {testmean:.3e} and for <em>{refcase}</em> is {refmean:.3e}. ' \
@@ -346,9 +411,11 @@ def main(args):
                    'plot markers and bars.'.format(var=var,
                                                    desc=_desc,
                                                    testcase=args.test_case,
-                                                   testmean=details[var]['mean (test case, ref. case)'][0],
+                                                   # testmean=details[var]['mean (test case, ref. case)'][0],
+                                                   testmean=details[var]['mean test case'],
                                                    refcase=args.ref_case,
-                                                   refmean=details[var]['mean (test case, ref. case)'][1],
+                                                   refmean=details[var]['mean ref. case'],
+                                                   # refmean=details[var]['mean (test case, ref. case)'][1],
                                                    cfail=human_color_names['fail'][0],
                                                    cpass=human_color_names['pass'][0])
 
