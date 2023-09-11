@@ -376,9 +376,7 @@ def main(args):
     # performing the test (across ensemble members) to be the last dimension
     # (e.g. [nCells, nLevels, nEns]) this is why load_mpas_climatology_ensemble
     # returns data in this way
-    ks_test = np.vectorize(
-        stats.mstats.ks_2samp, signature="(n),(n)->(),()"
-    )
+    ks_test = np.vectorize(stats.mstats.ks_2samp, signature="(n),(n)->(),()")
 
     images = {"accept": [], "reject": [], "-": []}
     details = LIVVDict()
@@ -448,6 +446,7 @@ def main(args):
             test_name=args.test_case,
             ref_name=args.ref_case,
             pf=details[var]["h0"],
+            combine_hist=True,
         )
 
         img_desc = (
