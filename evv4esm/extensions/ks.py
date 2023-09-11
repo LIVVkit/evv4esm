@@ -127,6 +127,12 @@ def parse_args(args=None):
                         default='eam',
                         help='Model component name (e.g. eam, cam, ...)')
 
+    parser.add_argument(
+        "--correct",
+        action="store_true",
+        default=False,
+        help="Use FDR correction to compute global pass / fail"
+    )
     args, _ = parser.parse_known_args(args)
 
     # use config file arguments, but override with command line arguments
@@ -217,7 +223,10 @@ def run(name, config):
         }
     )
     rejects = [var for var, dat in details.items() if dat["h0"] == "reject"]
-    critical = ALPHA * len(details.keys())
+    if args.correct:
+        critical = ALPHA * len(details.keys())
+    else:
+        critical = args.critical
 
     results = el.Table(
         title="Results",
@@ -342,6 +351,9 @@ def compute_details(annual_avgs, common_vars, args):
     # Now that the details have been computed, perform the FDR correction
     # Convert to a Dataframe, transposed so that the index is the variable name
     detail_df = pd.DataFrame(details).T
+    # Create a null hypothesis rejection column for un-corrected p-values
+    detail_df["h0_uc"] = detail_df["K-S test p-val"] < ALPHA
+
     (
         detail_df["h0_c"],
         detail_df["pval_c"],
@@ -355,12 +367,17 @@ def compute_details(annual_avgs, common_vars, args):
         # These variables return lists not floats, fix that
         detail_df[_key] = detail_df[_key].apply(lambda x: x[0])
 
+    if args.correct:
+        _testkey = "h0_c"
+    else:
+        _testkey = "h0_uc"
+
     for var in common_vars:
         details[var]["K-S test p-val"] = detail_df.loc[var, "pval_c"]
 
         if details[var]['T test stat'] is None:
             details[var]['h0'] = '-'
-        elif detail_df.loc[var, "h0_c"]:
+        elif detail_df.loc[var, _testkey]:
             details[var]['h0'] = 'reject'
         else:
             details[var]['h0'] = 'accept'
@@ -393,7 +410,6 @@ def main(args):
         annuals_2 = annual_avgs.query('case == @args.ref_case & variable == @var').monthly_mean.values
 
         img_file = os.path.relpath(os.path.join(args.img_dir, var + '.png'), os.getcwd())
-        # prob_plot(annuals_1, annuals_2, 20, img_file, test_name=args.test_case, ref_name=args.ref_case,
         prob_plot(
             annuals_1,
             annuals_2,
@@ -411,11 +427,9 @@ def main(args):
                    'plot markers and bars.'.format(var=var,
                                                    desc=_desc,
                                                    testcase=args.test_case,
-                                                   # testmean=details[var]['mean (test case, ref. case)'][0],
                                                    testmean=details[var]['mean test case'],
                                                    refcase=args.ref_case,
                                                    refmean=details[var]['mean ref. case'],
-                                                   # refmean=details[var]['mean (test case, ref. case)'][1],
                                                    cfail=human_color_names['fail'][0],
                                                    cpass=human_color_names['pass'][0])
 
