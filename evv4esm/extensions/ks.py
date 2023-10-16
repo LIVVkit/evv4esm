@@ -224,7 +224,7 @@ def run(name, config):
     )
     rejects = [var for var, dat in details.items() if dat["h0"] == "reject"]
     if args.correct:
-        critical = ALPHA * len(details.keys())
+        critical = 1
     else:
         critical = args.critical
 
@@ -354,18 +354,9 @@ def compute_details(annual_avgs, common_vars, args):
     # Create a null hypothesis rejection column for un-corrected p-values
     detail_df["h0_uc"] = detail_df["K-S test p-val"] < ALPHA
 
-    (
-        detail_df["h0_c"],
-        detail_df["pval_c"],
-        detail_df["alpha_out"],
-        detail_df["alpha_in"]
-    ) = zip(*detail_df["K-S test p-val"].apply(
-        smm.multipletests, alpha=ALPHA, method="holm", is_sorted=False)
+    (detail_df["h0_c"], detail_df["pval_c"]) = smm.fdrcorrection(
+        detail_df["K-S test p-val"], alpha=ALPHA, method="indep", is_sorted=False
     )
-
-    for _key in ["h0_c", "pval_c"]:
-        # These variables return lists not floats, fix that
-        detail_df[_key] = detail_df[_key].apply(lambda x: x[0])
 
     if args.correct:
         _testkey = "h0_c"
