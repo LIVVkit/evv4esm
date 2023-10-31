@@ -68,70 +68,83 @@ from evv4esm.utils import bib2html
 
 
 def variable_set(name):
-    var_sets = fn.read_json(os.path.join(os.path.dirname(__file__),
-                                         'ks_vars.json'))
+    var_sets = fn.read_json(os.path.join(os.path.dirname(__file__), "ks_vars.json"))
     try:
         the_set = var_sets[name.lower()]
         return set(the_set)
     except KeyError as e:
-        six.raise_from(argparse.ArgumentTypeError(
-                'Unknown variable set! Known sets are {}'.format(
-                        var_sets.keys()
-                )), e)
+        six.raise_from(
+            argparse.ArgumentTypeError(
+                "Unknown variable set! Known sets are {}".format(var_sets.keys())
+            ),
+            e,
+        )
 
 
 def parse_args(args=None):
-    parser = argparse.ArgumentParser(description=__doc__,
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
 
-    parser.add_argument('-c', '--config',
-                        type=fn.read_json,
-                        help='A JSON config file containing a `ks` dictionary defining ' +
-                             'the options. NOTE: command line options will override file options.')
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=fn.read_json,
+        help="A JSON config file containing a `ks` dictionary defining "
+        + "the options. NOTE: command line options will override file options.",
+    )
 
-    parser.add_argument('--test-case',
-                        default='default',
-                        help='Name of the test case.')
+    parser.add_argument("--test-case", default="default", help="Name of the test case.")
 
-    parser.add_argument('--test-dir',
-                        default=os.path.join(os.getcwd(), 'archive'),
-                        help='Location of the test case run files.')
+    parser.add_argument(
+        "--test-dir",
+        default=os.path.join(os.getcwd(), "archive"),
+        help="Location of the test case run files.",
+    )
 
-    parser.add_argument('--ref-case',
-                        default='fast',
-                        help='Name of the reference case.')
+    parser.add_argument(
+        "--ref-case", default="fast", help="Name of the reference case."
+    )
 
-    parser.add_argument('--ref-dir',
-                        default=os.path.join(os.getcwd(), 'archive'),
-                        help='Location of the reference case run files.')
+    parser.add_argument(
+        "--ref-dir",
+        default=os.path.join(os.getcwd(), "archive"),
+        help="Location of the reference case run files.",
+    )
 
-    parser.add_argument('--var-set',
-                        default='default', type=variable_set,
-                        help='Name of the variable set to analyze.')
+    parser.add_argument(
+        "--var-set",
+        default="default",
+        type=variable_set,
+        help="Name of the variable set to analyze.",
+    )
 
-    parser.add_argument('--ninst',
-                        default=30, type=int,
-                        help='The number of instances (should be the same for '
-                             'both cases).')
+    parser.add_argument(
+        "--ninst",
+        default=30,
+        type=int,
+        help="The number of instances (should be the same for " "both cases).",
+    )
 
-    parser.add_argument('--critical',
-                        default=13, type=float,
-                        help='The critical value (desired significance level) for rejecting the ' +
-                        'null hypothesis.')
+    parser.add_argument(
+        "--critical",
+        default=13,
+        type=float,
+        help="The critical value (desired significance level) for rejecting the "
+        + "null hypothesis.",
+    )
 
-    parser.add_argument('--img-dir',
-                        default=os.getcwd(),
-                        help='Image output location.')
+    parser.add_argument("--img-dir", default=os.getcwd(), help="Image output location.")
 
-    parser.add_argument('--component',
-                        default='eam',
-                        help='Model component name (e.g. eam, cam, ...)')
+    parser.add_argument(
+        "--component", default="eam", help="Model component name (e.g. eam, cam, ...)"
+    )
 
     parser.add_argument(
         "--correct",
         action="store_true",
         default=False,
-        help="Use FDR correction to compute global pass / fail"
+        help="Use FDR correction to compute global pass / fail",
     )
     args, _ = parser.parse_known_args(args)
 
@@ -139,14 +152,18 @@ def parse_args(args=None):
     if args.config:
         default_args = parser.parse_args([])
 
-        for key, val, in vars(args).items():
+        for (
+            key,
+            val,
+        ) in vars(args).items():
             if val != vars(default_args)[key]:
-                args.config['ks'][key] = val
+                args.config["ks"][key] = val
 
         config_arg_list = []
         _ = [
-            config_arg_list.extend(['--'+key, str(val)])
-            for key, val in args.config['ks'].items() if key != 'config'
+            config_arg_list.extend(["--" + key, str(val)])
+            for key, val in args.config["ks"].items()
+            if key != "config"
         ]
         args, _ = parser.parse_known_args(config_arg_list)
 
@@ -169,6 +186,7 @@ def col_fmt(dat):
 
     return _out
 
+
 def run(name, config):
     """
     Runs the analysis.
@@ -182,11 +200,11 @@ def run(name, config):
     """
 
     config_arg_list = []
-    [config_arg_list.extend(['--'+key, str(val)]) for key, val in config.items()]
+    [config_arg_list.extend(["--" + key, str(val)]) for key, val in config.items()]
 
     args = parse_args(config_arg_list)
 
-    args.img_dir = os.path.join(livvkit.output_dir, 'validation', 'imgs', name)
+    args.img_dir = os.path.join(livvkit.output_dir, "validation", "imgs", name)
     fn.mkdir_p(args.img_dir)
 
     details, img_gal = main(args)
@@ -210,17 +228,13 @@ def run(name, config):
     tables = [
         el.Table("Rejected", data=table_data[table_data["h0"] == "reject"]),
         el.Table("Accepted", data=table_data[table_data["h0"] == "accept"]),
-        el.Table("Null", data=table_data[~table_data["h0"].isin(["accept", "reject"])])
+        el.Table("Null", data=table_data[~table_data["h0"].isin(["accept", "reject"])]),
     ]
 
-    bib_html = bib2html(os.path.join(os.path.dirname(__file__), 'ks.bib'))
+    bib_html = bib2html(os.path.join(os.path.dirname(__file__), "ks.bib"))
 
     tabs = el.Tabs(
-        {
-            "Figures": img_gal,
-            "Details": tables,
-            "References": [el.RawHTML(bib_html)]
-        }
+        {"Figures": img_gal, "Details": tables, "References": [el.RawHTML(bib_html)]}
     )
     rejects = [var for var, dat in details.items() if dat["h0"] == "reject"]
     if args.correct:
@@ -233,19 +247,21 @@ def run(name, config):
         data=OrderedDict(
             {
                 # 'Test status': ['pass' if len(rejects) < args.critical else 'fail'],
-                'Test status': ['pass' if len(rejects) < critical else 'fail'],
-                'Variables analyzed': [len(details.keys())],
-                'Rejecting': [len(rejects)],
-                'Critical value': [int(critical)],
-                'Ensembles': [
-                    'statistically identical' if len(rejects) < critical else 'statistically different'
-                ]
+                "Test status": ["pass" if len(rejects) < critical else "fail"],
+                "Variables analyzed": [len(details.keys())],
+                "Rejecting": [len(rejects)],
+                "Critical value": [int(critical)],
+                "Ensembles": [
+                    "statistically identical"
+                    if len(rejects) < critical
+                    else "statistically different"
+                ],
             }
-        )
+        ),
     )
 
     # FIXME: Put into a ___ function
-    page = el.Page(name, __doc__.replace('\n\n', '<br><br>'), elements=[results, tabs])
+    page = el.Page(name, __doc__.replace("\n\n", "<br><br>"), elements=[results, tabs])
     return page
 
 
@@ -254,50 +270,54 @@ def case_files(args):
     key1 = args.test_case
     key2 = args.ref_case
     if args.test_case == args.ref_case:
-        key1 += '1'
-        key2 += '2'
+        key1 += "1"
+        key2 += "2"
 
-    f_sets = {key1: e3sm.component_monthly_files(args.test_dir, args.component, args.ninst),
-              key2: e3sm.component_monthly_files(args.ref_dir, args.component, args.ninst)}
+    f_sets = {
+        key1: e3sm.component_monthly_files(args.test_dir, args.component, args.ninst),
+        key2: e3sm.component_monthly_files(args.ref_dir, args.component, args.ninst),
+    }
 
     for key in f_sets:
         # Require case files for at least the last 12 months.
         if any(list(map(lambda x: x == [], f_sets[key].values()))[-12:]):
-            raise EVVException('Could not find all the required case files for case: {}'.format(key))
+            raise EVVException(
+                "Could not find all the required case files for case: {}".format(key)
+            )
 
     return f_sets, key1, key2
 
 
 def print_summary(summary):
-    print('    Kolmogorov-Smirnov Test: {}'.format(summary['']['Case']))
-    print('      Variables analyzed: {}'.format(summary['']['Variables analyzed']))
-    print('      Rejecting: {}'.format(summary['']['Rejecting']))
-    print('      Critical value: {}'.format(summary['']['Critical value']))
-    print('      Ensembles: {}'.format(summary['']['Ensembles']))
-    print('      Test status: {}\n'.format(summary['']['Test status']))
+    print("    Kolmogorov-Smirnov Test: {}".format(summary[""]["Case"]))
+    print("      Variables analyzed: {}".format(summary[""]["Variables analyzed"]))
+    print("      Rejecting: {}".format(summary[""]["Rejecting"]))
+    print("      Critical value: {}".format(summary[""]["Critical value"]))
+    print("      Ensembles: {}".format(summary[""]["Ensembles"]))
+    print("      Test status: {}\n".format(summary[""]["Test status"]))
 
 
 def print_details(details):
     for set_ in details:
-        print('-'*80)
+        print("-" * 80)
         print(set_)
-        print('-'*80)
+        print("-" * 80)
         pprint(details[set_])
 
 
 def summarize_result(results_page):
-    summary = {'Case': results_page.title}
+    summary = {"Case": results_page.title}
 
     for elem in results_page.elements:
         if isinstance(elem, el.Table) and elem.title == "Results":
-            summary['Test status'] = elem.data['Test status'][0]
-            summary['Variables analyzed'] = elem.data['Variables analyzed'][0]
-            summary['Rejecting'] = elem.data['Rejecting'][0]
-            summary['Critical value'] = elem.data['Critical value'][0]
-            summary['Ensembles'] = elem.data['Ensembles'][0]
+            summary["Test status"] = elem.data["Test status"][0]
+            summary["Variables analyzed"] = elem.data["Variables analyzed"][0]
+            summary["Rejecting"] = elem.data["Rejecting"][0]
+            summary["Critical value"] = elem.data["Critical value"][0]
+            summary["Ensembles"] = elem.data["Ensembles"][0]
             break
 
-    return {'': summary}
+    return {"": summary}
 
 
 def populate_metadata():
@@ -306,23 +326,34 @@ def populate_metadata():
     is done by this module's run method
     """
 
-    metadata = {'Type': 'ValSummary',
-                'Title': 'Validation',
-                'TableTitle': 'Kolmogorov-Smirnov test',
-                'Headers': ['Test status', 'Variables analyzed', 'Rejecting', 'Critical value', 'Ensembles']}
+    metadata = {
+        "Type": "ValSummary",
+        "Title": "Validation",
+        "TableTitle": "Kolmogorov-Smirnov test",
+        "Headers": [
+            "Test status",
+            "Variables analyzed",
+            "Rejecting",
+            "Critical value",
+            "Ensembles",
+        ],
+    }
     return metadata
 
 
 def compute_details(annual_avgs, common_vars, args):
-    """Compute the detail table, perform a T Test and K-S test for each variable.
-    """
+    """Compute the detail table, perform a T Test and K-S test for each variable."""
     details = LIVVDict()
     for var in sorted(common_vars):
-        annuals_1 = annual_avgs.query('case == @args.test_case & variable == @var').monthly_mean.values
-        annuals_2 = annual_avgs.query('case == @args.ref_case & variable == @var').monthly_mean.values
+        annuals_1 = annual_avgs.query(
+            "case == @args.test_case & variable == @var"
+        ).monthly_mean.values
+        annuals_2 = annual_avgs.query(
+            "case == @args.ref_case & variable == @var"
+        ).monthly_mean.values
 
         ttest_t, ttest_p = stats.ttest_ind(
-            annuals_1, annuals_2, equal_var=False, nan_policy=str('omit')
+            annuals_1, annuals_2, equal_var=False, nan_policy=str("omit")
         )
         ks_d, ks_p = stats.ks_2samp(annuals_1, annuals_2)
 
@@ -333,20 +364,20 @@ def compute_details(annual_avgs, common_vars, args):
         details[var]["T test stat"] = ttest_t
         details[var]["T test p-val"] = ttest_p
 
-        details[var]['K-S test stat'] = ks_d
-        details[var]['K-S test p-val'] = ks_p
+        details[var]["K-S test stat"] = ks_d
+        details[var]["K-S test p-val"] = ks_p
 
-        details[var]['mean test case'] = annuals_1.mean()
-        details[var]['mean ref. case'] = annuals_2.mean()
+        details[var]["mean test case"] = annuals_1.mean()
+        details[var]["mean ref. case"] = annuals_2.mean()
 
-        details[var]['max test case'] = annuals_1.max()
-        details[var]['max ref. case'] = annuals_2.max()
+        details[var]["max test case"] = annuals_1.max()
+        details[var]["max ref. case"] = annuals_2.max()
 
-        details[var]['min test case'] = annuals_1.min()
-        details[var]['min ref. case'] = annuals_2.min()
+        details[var]["min test case"] = annuals_1.min()
+        details[var]["min ref. case"] = annuals_2.min()
 
-        details[var]['std test case'] = annuals_1.std()
-        details[var]['std ref. case'] = annuals_2.std()
+        details[var]["std test case"] = annuals_1.std()
+        details[var]["std ref. case"] = annuals_2.std()
 
     # Now that the details have been computed, perform the FDR correction
     # Convert to a Dataframe, transposed so that the index is the variable name
@@ -366,12 +397,12 @@ def compute_details(annual_avgs, common_vars, args):
     for var in common_vars:
         details[var]["K-S test p-val"] = detail_df.loc[var, "pval_c"]
 
-        if details[var]['T test stat'] is None:
-            details[var]['h0'] = '-'
+        if details[var]["T test stat"] is None:
+            details[var]["h0"] = "-"
         elif detail_df.loc[var, _testkey]:
-            details[var]['h0'] = 'reject'
+            details[var]["h0"] = "reject"
         else:
-            details[var]['h0'] = 'accept'
+            details[var]["h0"] = "accept"
 
     return details
 
@@ -383,24 +414,37 @@ def main(args):
         args.ref_case = key2
 
     monthly_avgs = e3sm.gather_monthly_averages(ens_files, args.var_set)
-    annual_avgs = monthly_avgs.groupby(['case', 'variable', 'instance']
-                                       ).monthly_mean.aggregate(monthly_to_annual_avg).reset_index()
+    annual_avgs = (
+        monthly_avgs.groupby(["case", "variable", "instance"])
+        .monthly_mean.aggregate(monthly_to_annual_avg)
+        .reset_index()
+    )
 
     # now, we got the data, so let's get some stats
     test_set = set(monthly_avgs[monthly_avgs.case == args.test_case].variable.unique())
     ref_set = set(monthly_avgs[monthly_avgs.case == args.ref_case].variable.unique())
     common_vars = list(test_set & ref_set)
     if not common_vars:
-        raise EVVException('No common variables between {} and {} to analyze!'.format(args.test_case, args.ref_case))
+        raise EVVException(
+            "No common variables between {} and {} to analyze!".format(
+                args.test_case, args.ref_case
+            )
+        )
 
     images = {"accept": [], "reject": [], "-": []}
     details = compute_details(annual_avgs, common_vars, args)
 
     for var in sorted(common_vars):
-        annuals_1 = annual_avgs.query('case == @args.test_case & variable == @var').monthly_mean.values
-        annuals_2 = annual_avgs.query('case == @args.ref_case & variable == @var').monthly_mean.values
+        annuals_1 = annual_avgs.query(
+            "case == @args.test_case & variable == @var"
+        ).monthly_mean.values
+        annuals_2 = annual_avgs.query(
+            "case == @args.ref_case & variable == @var"
+        ).monthly_mean.values
 
-        img_file = os.path.relpath(os.path.join(args.img_dir, var + '.png'), os.getcwd())
+        img_file = os.path.relpath(
+            os.path.join(args.img_dir, var + ".png"), os.getcwd()
+        )
         prob_plot(
             annuals_1,
             annuals_2,
@@ -408,30 +452,40 @@ def main(args):
             img_file,
             test_name=args.test_case,
             ref_name=args.ref_case,
-            pf=details[var]['h0'],
-            combine_hist=True
+            pf=details[var]["h0"],
+            combine_hist=True,
         )
-        _desc = monthly_avgs.query('case == @args.test_case & variable == @var').desc.values[0]
-        img_desc = 'Mean annual global average of {var}{desc} for <em>{testcase}</em> ' \
-                   'is {testmean:.3e} and for <em>{refcase}</em> is {refmean:.3e}. ' \
-                   'Pass (fail) is indicated by {cpass} ({cfail}) coloring of the ' \
-                   'plot markers and bars.'.format(var=var,
-                                                   desc=_desc,
-                                                   testcase=args.test_case,
-                                                   testmean=details[var]['mean test case'],
-                                                   refcase=args.ref_case,
-                                                   refmean=details[var]['mean ref. case'],
-                                                   cfail=human_color_names['fail'][0],
-                                                   cpass=human_color_names['pass'][0])
+        _desc = monthly_avgs.query(
+            "case == @args.test_case & variable == @var"
+        ).desc.values[0]
+        img_desc = (
+            "Mean annual global average of {var}{desc} for <em>{testcase}</em> "
+            "is {testmean:.3e} and for <em>{refcase}</em> is {refmean:.3e}. "
+            "Pass (fail) is indicated by {cpass} ({cfail}) coloring of the "
+            "plot markers and bars.".format(
+                var=var,
+                desc=_desc,
+                testcase=args.test_case,
+                testmean=details[var]["mean test case"],
+                refcase=args.ref_case,
+                refmean=details[var]["mean ref. case"],
+                cfail=human_color_names["fail"][0],
+                cpass=human_color_names["pass"][0],
+            )
+        )
 
         img_link = Path(*Path(args.img_dir).parts[-2:], Path(img_file).name)
-        _img = el.Image(var, img_desc, img_link, relative_to="", group=details[var]['h0'])
-        images[details[var]['h0']].append(_img)
+        _img = el.Image(
+            var, img_desc, img_link, relative_to="", group=details[var]["h0"]
+        )
+        images[details[var]["h0"]].append(_img)
 
     gals = []
     for group in ["reject", "accept", "-"]:
         _group_name = {
-            "reject": "Failed variables", "accept": "Passed variables", "-": "Null variables"
+            "reject": "Failed variables",
+            "accept": "Passed variables",
+            "-": "Null variables",
         }
         if images[group]:
             gals.append(el.Gallery(_group_name[group], images[group]))
@@ -439,5 +493,5 @@ def main(args):
     return details, gals
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print_details(main(parse_args()))
