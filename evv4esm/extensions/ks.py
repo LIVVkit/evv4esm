@@ -43,7 +43,6 @@ critical number of rejecting variables. The critical value, α, is obtained from
 an empirically derived approximate null distribution of t using resampling
 techniques.
 """
-ALPHA = 0.05
 
 import argparse
 import os
@@ -154,6 +153,11 @@ def parse_args(args=None):
         default=False,
         help="Do not use FDR correction to compute global pass / fail, will ",
     )
+
+    parser.add_argument(
+        "--alpha", default=0.05, type=float, help="Alpha threshold for pass / fail"
+    )
+
     args, _ = parser.parse_known_args(args)
 
     # use config file arguments, but override with command line arguments
@@ -391,10 +395,10 @@ def compute_details(annual_avgs, common_vars, args):
     # Convert to a Dataframe, transposed so that the index is the variable name
     detail_df = pd.DataFrame(details).T
     # Create a null hypothesis rejection column for un-corrected p-values
-    detail_df["h0_uc"] = detail_df["K-S test p-val"] < ALPHA
+    detail_df["h0_uc"] = detail_df["K-S test p-val"] < args.alpha
 
     (detail_df["h0_c"], detail_df["pval_c"]) = smm.fdrcorrection(
-        detail_df["K-S test p-val"], alpha=ALPHA, method="indep", is_sorted=False
+        detail_df["K-S test p-val"], alpha=args.alpha, method="n", is_sorted=False
     )
 
     if args.uncorrected:

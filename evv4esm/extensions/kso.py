@@ -400,7 +400,7 @@ def main(args):
 
         null_reject_pre_correct = np.sum(np.where(p_val <= args.alpha, 1, 0))
         _, p_val = smm.fdrcorrection(
-            p_val.flatten(), alpha=args.alpha, method="indep", is_sorted=False
+            p_val.flatten(), alpha=args.alpha, method="n", is_sorted=False
         )
         null_reject_post_correct = np.sum(np.where(p_val <= args.alpha, 1, 0))
 
