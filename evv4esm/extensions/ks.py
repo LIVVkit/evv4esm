@@ -129,9 +129,12 @@ def parse_args(args=None):
     parser.add_argument(
         "--critical",
         default=13,
-        type=float,
-        help="The critical value (desired significance level) for rejecting the "
-        + "null hypothesis.",
+        type=int,
+        help=(
+            "The critical value (desired significance level) for rejecting the "
+            "null hypothesis. Only used when --uncorrected / -u flag is passed. "
+            "Otherwise the critical value is 1."
+        ),
     )
 
     parser.add_argument("--img-dir", default=os.getcwd(), help="Image output location.")
@@ -145,10 +148,11 @@ def parse_args(args=None):
     )
 
     parser.add_argument(
-        "--correct",
+        "--uncorrected",
+        "-u",
         action="store_true",
         default=False,
-        help="Use FDR correction to compute global pass / fail",
+        help="Do not use FDR correction to compute global pass / fail, will ",
     )
     args, _ = parser.parse_known_args(args)
 
@@ -241,10 +245,10 @@ def run(name, config):
         {"Figures": img_gal, "Details": tables, "References": [el.RawHTML(bib_html)]}
     )
     rejects = [var for var, dat in details.items() if dat["h0"] == "reject"]
-    if args.correct:
-        critical = 1
-    else:
+    if args.uncorrected:
         critical = args.critical
+    else:
+        critical = 1
 
     results = el.Table(
         title="Results",
@@ -393,10 +397,10 @@ def compute_details(annual_avgs, common_vars, args):
         detail_df["K-S test p-val"], alpha=ALPHA, method="indep", is_sorted=False
     )
 
-    if args.correct:
-        _testkey = "h0_c"
-    else:
+    if args.uncorrected:
         _testkey = "h0_uc"
+    else:
+        _testkey = "h0_c"
 
     for var in common_vars:
         details[var]["K-S test p-val"] = detail_df.loc[var, "pval_c"]
