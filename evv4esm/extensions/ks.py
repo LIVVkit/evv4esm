@@ -137,6 +137,10 @@ def parse_args(args=None):
     parser.add_argument("--img-dir", default=os.getcwd(), help="Image output location.")
 
     parser.add_argument(
+        "--img-fmt", default="png", type=str, help="Format for output images"
+    )
+
+    parser.add_argument(
         "--component", default="eam", help="Model component name (e.g. eam, cam, ...)"
     )
 
@@ -443,7 +447,7 @@ def main(args):
         ).monthly_mean.values
 
         img_file = os.path.relpath(
-            os.path.join(args.img_dir, var + ".png"), os.getcwd()
+            os.path.join(args.img_dir, f"{var}.{args.img_fmt}"), os.getcwd()
         )
         prob_plot(
             annuals_1,
