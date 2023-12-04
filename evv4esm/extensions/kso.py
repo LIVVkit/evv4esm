@@ -132,6 +132,10 @@ def parse_args(args=None):
     parser.add_argument("--img-dir", default=os.getcwd(), help="Image output location.")
 
     parser.add_argument(
+        "--img-fmt", default="png", type=str, help="Format for output images"
+    )
+
+    parser.add_argument(
         "--component", default="mpaso", help="Model component name (e.g. eam, cam, ...)"
     )
 
@@ -376,9 +380,7 @@ def main(args):
     # performing the test (across ensemble members) to be the last dimension
     # (e.g. [nCells, nLevels, nEns]) this is why load_mpas_climatology_ensemble
     # returns data in this way
-    ks_test = np.vectorize(
-        stats.mstats.ks_2samp, signature="(n),(n)->(),()"
-    )
+    ks_test = np.vectorize(stats.mstats.ks_2samp, signature="(n),(n)->(),()")
 
     images = {"accept": [], "reject": [], "-": []}
     details = LIVVDict()
@@ -398,7 +400,7 @@ def main(args):
 
         null_reject_pre_correct = np.sum(np.where(p_val <= args.alpha, 1, 0))
         _, p_val = smm.fdrcorrection(
-            p_val.flatten(), alpha=args.alpha, method="indep", is_sorted=False
+            p_val.flatten(), alpha=args.alpha, method="n", is_sorted=False
         )
         null_reject_post_correct = np.sum(np.where(p_val <= args.alpha, 1, 0))
 
@@ -435,7 +437,7 @@ def main(args):
         details[var]["h0"] = test_result
 
         img_file = os.path.relpath(
-            os.path.join(args.img_dir, var + ".png"), os.getcwd()
+            os.path.join(args.img_dir, f"{var}.{args.img_fmt}"), os.getcwd()
         )
 
         # Plot ensemble histogram / q-q, p-p plot of
@@ -448,6 +450,7 @@ def main(args):
             test_name=args.test_case,
             ref_name=args.ref_case,
             pf=details[var]["h0"],
+            combine_hist=True,
         )
 
         img_desc = (

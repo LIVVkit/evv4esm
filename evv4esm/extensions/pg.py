@@ -253,9 +253,8 @@ def main(args):
     pge_ends_comp = comp_rmse[:, :, -1]
 
     # run the t-test
-    pge_ends_cld = pge_ends_cld.flatten()
-    pge_ends_comp = pge_ends_comp.flatten()
-
+    pge_ends_cld = pge_ends_cld.flatten().astype(np.float32)
+    pge_ends_comp = pge_ends_comp.flatten().astype(np.float32)
     t_stat, p_val = stats.ttest_ind(pge_ends_cld, pge_ends_comp)
 
     if np.isnan((t_stat, p_val)).any() or np.isinf((t_stat, p_val)).any():
