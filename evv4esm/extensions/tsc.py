@@ -273,21 +273,37 @@ def main(args):
     if not np.allclose(delta_rmsd[delta_columns], 0.0, atol=1e-12):
         # NOTE: This mess is because we want to "normalize" delta l2 by the mean
         # _reference_ l2 for each instance and variable.
-        delta_rmsd[['norm_' + d for d in delta_columns]] = \
-            delta_rmsd.groupby(['instance', 'variable']).apply(
-                lambda g: g[delta_columns] / g[ref_columns].mean().values)
+        # An update to Pandas (v1 -> v2) means the old method of joining these columns
+        # to the DataFrame no longer works, this now is done in two steps, compute the
+        # normed columns, then join them to the extant DataFrame
+        _norm = delta_rmsd.groupby(['instance', 'variable']).apply(
+            lambda g: g[delta_columns] / g[ref_columns].mean().values
+        )
+        delta_rmsd = delta_rmsd.join(
+            _norm.reset_index().set_index("level_2"), rsuffix="_norm"
+        )
 
         testee = delta_rmsd.query(' seconds >= @args.time_slice[0] & seconds <= @args.time_slice[-1]')
-        ttest = testee.groupby(['seconds', 'variable']).agg(stats.ttest_1samp, popmean=0.0).drop(columns='instance')
+        ttest = (
+            testee
+            # Remove the string columns from the frame
+            .drop(columns=["case", "variable_norm"])
+            # Group into time steps and by variable
+            .groupby(['seconds', 'variable'])
+            # Aggregate using the 1 sample ttest, population mean of 0
+            .agg(stats.ttest_1samp, popmean=0.0)
+            # Remove the instance column
+            .drop(columns='instance')
+        )
 
         # H0: enemble_mean_ΔRMSD_{t,var} is (statistically) zero and therefore, the simulations are identical
-        null_hypothesis = ttest.applymap(lambda x: 'Reject' if x[1] < args.p_threshold else 'Accept')
+        null_hypothesis = ttest.map(lambda x: 'Reject' if x[1] < args.p_threshold else 'Accept')
 
         domains = (
             # True for rejection of null_hypothesis for each variable at each time, by comparing
             # index 1 (x[1]) of each column of tuples, which corresponds to the p-value to the
             # threshold for p-values
-            ttest.applymap(lambda x: x[1] < args.p_threshold)
+            ttest.map(lambda x: x[1] < args.p_threshold)
             # Select only times in the inspection window
             .query(' seconds >= @args.inspect_times[0] & seconds <= @args.inspect_times[-1]')
             # Create groups of all variables at each time step in the window
@@ -495,7 +511,7 @@ def plot_failing_variables(args, null_hypothesis, img_file):
 
 
 def plot_pmin(args, ttest, img_file):
-    ttest[['p_land', 'p_ocean']] = ttest[['delta_l2_land', 'delta_l2_ocean']].applymap(lambda x: x[1])
+    ttest[['p_land', 'p_ocean']] = ttest[['delta_l2_land', 'delta_l2_ocean']].map(lambda x: x[1])
     pdata = ttest[['seconds', 'p_land', 'p_ocean']].groupby(['seconds']).min().min(axis=1) * 100  # to %
 
     fig, ax = plt.subplots(figsize=(10, 8))
@@ -551,7 +567,7 @@ def plot_pmin(args, ttest, img_file):
 
 def boxplot_delta_rmsd(args, delta_rmsd, null_hypothesis, img_file_format):
     img_list = []
-    columns = ['instance', 'variable', 'norm_delta_l2_land', 'norm_delta_l2_ocean']
+    columns = ['instance', 'variable', 'delta_l2_land_norm', 'delta_l2_ocean_norm']
     for time in delta_rmsd['seconds'].unique():
         img_file = img_file_format.format(time)
         pdata = delta_rmsd[delta_rmsd['seconds'] == time][columns]
@@ -559,19 +575,19 @@ def boxplot_delta_rmsd(args, delta_rmsd, null_hypothesis, img_file_format):
         fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(10, 8), sharex='all')
         plt.rc('font', family='serif')
 
-        bp1 = pdata.boxplot(column='norm_delta_l2_land', by='variable', ax=ax1, vert=False, grid=False,
+        bp1 = pdata.boxplot(column='delta_l2_land_norm', by='variable', ax=ax1, vert=False, grid=False,
                             patch_artist=True, return_type='dict', showmeans=True,
                             meanprops={'markerfacecolor': 'black',
                                        'markeredgecolor': 'black',
                                        'marker': '.'})
-        bp2 = pdata.boxplot(column='norm_delta_l2_ocean', by='variable', ax=ax2, vert=False, grid=False,
+        bp2 = pdata.boxplot(column='delta_l2_ocean_norm', by='variable', ax=ax2, vert=False, grid=False,
                             patch_artist=True, return_type='dict', showmeans=True,
                             meanprops={'markerfacecolor': 'black',
                                        'markeredgecolor': 'black',
                                        'marker': '.'})
 
-        for box1, box2, var1, var2 in zip(bp1['norm_delta_l2_land']['boxes'],
-                                          bp2['norm_delta_l2_ocean']['boxes'],
+        for box1, box2, var1, var2 in zip(bp1['delta_l2_land_norm']['boxes'],
+                                          bp2['delta_l2_ocean_norm']['boxes'],
                                           list(ax1.get_yticklabels()),
                                           list(ax2.get_yticklabels())):
 
@@ -591,8 +607,8 @@ def boxplot_delta_rmsd(args, delta_rmsd, null_hypothesis, img_file_format):
             box2.set_alpha(0.5)
 
         for artist in ['fliers', 'medians', 'means', 'whiskers', 'caps']:
-            for a1, a2 in zip(bp1['norm_delta_l2_land'][artist],
-                              bp2['norm_delta_l2_ocean'][artist]):
+            for a1, a2 in zip(bp1['delta_l2_land_norm'][artist],
+                              bp2['delta_l2_ocean_norm'][artist]):
                 a1.set_color('black')
                 a2.set_color('black')
 
@@ -625,7 +641,7 @@ def boxplot_delta_rmsd(args, delta_rmsd, null_hypothesis, img_file_format):
 
 def errorbars_delta_rmsd(args, delta_rmsd, null_hypothesis, img_file_format):
     img_list = []
-    columns = ['instance', 'variable', 'norm_delta_l2_land', 'norm_delta_l2_ocean']
+    columns = ['instance', 'variable', 'delta_l2_land_norm', 'delta_l2_ocean_norm']
 
     N = len(delta_rmsd['instance'].unique()) - 1
     tval_crit = stats.t.ppf(1 - args.p_threshold, df=N - 1)
@@ -658,20 +674,20 @@ def errorbars_delta_rmsd(args, delta_rmsd, null_hypothesis, img_file_format):
                         for var in pdata.index.values]
         l_ocean_colors = [light_pf_color_picker[oc] for oc in ocean_colors]
 
-        et1 = ax1.errorbar(pdata['norm_delta_l2_land']['mean'].values, yvals,
-                           xerr=np.stack([tval_crit * scale_std * pdata['norm_delta_l2_land']['std'].values,
-                                          2 * scale_std * pdata['norm_delta_l2_land']['std'].values]),
+        et1 = ax1.errorbar(pdata['delta_l2_land_norm']['mean'].values, yvals,
+                           xerr=np.stack([tval_crit * scale_std * pdata['delta_l2_land_norm']['std'].values,
+                                          2 * scale_std * pdata['delta_l2_land_norm']['std'].values]),
                            fmt='k.', elinewidth=20, ecolor='lightblue')
-        es1 = ax1.errorbar(pdata['norm_delta_l2_land']['mean'].values, yvals,
-                           xerr=2 * scale_std * pdata['norm_delta_l2_land']['std'].values,
+        es1 = ax1.errorbar(pdata['delta_l2_land_norm']['mean'].values, yvals,
+                           xerr=2 * scale_std * pdata['delta_l2_land_norm']['std'].values,
                            fmt='k.', elinewidth=20)
 
-        et2 = ax2.errorbar(pdata['norm_delta_l2_ocean']['mean'].values, yvals,
-                           xerr=np.stack([tval_crit * scale_std * pdata['norm_delta_l2_ocean']['std'].values,
-                                          2 * scale_std * pdata['norm_delta_l2_ocean']['std'].values]),
+        et2 = ax2.errorbar(pdata['delta_l2_ocean_norm']['mean'].values, yvals,
+                           xerr=np.stack([tval_crit * scale_std * pdata['delta_l2_ocean_norm']['std'].values,
+                                          2 * scale_std * pdata['delta_l2_ocean_norm']['std'].values]),
                            fmt='k.', elinewidth=20, ecolor='lightblue')
-        es2 = ax2.errorbar(pdata['norm_delta_l2_ocean']['mean'].values, yvals,
-                           xerr=2 * scale_std * pdata['norm_delta_l2_ocean']['std'].values,
+        es2 = ax2.errorbar(pdata['delta_l2_ocean_norm']['mean'].values, yvals,
+                           xerr=2 * scale_std * pdata['delta_l2_ocean_norm']['std'].values,
                            fmt='k.', elinewidth=20)
 
         _, _, (elines1,) = et1.lines
