@@ -78,12 +78,12 @@ setup(
           'six',
           'numpy',
           'scipy',
-          'pandas',
+          'pandas>=2.1.0',
           'livvkit>=3.0.1',
           'netCDF4',
           'matplotlib',
           'pybtex',
-          'statsmodels==0.14.0',
+          'statsmodels>=0.14.0',
           ],
 
       packages=[
