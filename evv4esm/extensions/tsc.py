@@ -119,27 +119,7 @@ def run(name, config, print_details=False):
         _print_details(details)
 
     domain_headers = ["Null hypothesis", "T test (t, P)"]
-    global_tbl_el = {
-        "Type": "V-H Table",
-        "Title": "Validation",
-        "TableTitle": "Analyzed variables",
-        "Headers": domain_headers,
-        "Data": details["global"],
-    }
-    land_tbl_el = {
-        "Type": "V-H Table",
-        "Title": "Validation",
-        "TableTitle": "Analyzed variables",
-        "Headers": domain_headers,
-        "Data": details["land"],
-    }
-    ocean_tbl_el = {
-        "Type": "V-H Table",
-        "Title": "Validation",
-        "TableTitle": "Analyzed variables",
-        "Headers": domain_headers,
-        "Data": details["ocean"],
-    }
+
     bib_html = bib2html(os.path.join(os.path.dirname(__file__), "tsc.bib"))
     detail_tables = {"global": [], "land": [], "ocean": []}
     table_headers = ["Variable", *domain_headers]
