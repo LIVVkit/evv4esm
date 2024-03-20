@@ -170,10 +170,16 @@ def prob_plot(
 
         else:
             ax3.hist(
-                norm_ref, bins=n_q, color=pf_color_picker.get(pf, "#1F77B4"), edgecolor="k"
+                norm_ref,
+                bins=n_q,
+                color=pf_color_picker.get(pf, "#1F77B4"),
+                edgecolor="k",
             )
             ax4.hist(
-                norm_test, bins=n_q, color=pf_color_picker.get(pf, "#1F77B4"), edgecolor="k"
+                norm_test,
+                bins=n_q,
+                color=pf_color_picker.get(pf, "#1F77B4"),
+                edgecolor="k",
             )
 
             # Check if these distributions are wildly different. If they are, use different

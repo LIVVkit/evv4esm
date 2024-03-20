@@ -2,21 +2,21 @@
 # coding=utf-8
 # Copyright (c) 2018 UT-BATTELLE, LLC
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 # 1. Redistributions of source code must retain the above copyright notice, this
 # list of conditions and the following disclaimer.
-# 
+#
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 # this list of conditions and the following disclaimer in the documentation
 # and/or other materials provided with the distribution.
-# 
+#
 # 3. Neither the name of the copyright holder nor the names of its contributors
 # may be used to endorse or promote products derived from this software without
 # specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -39,53 +39,72 @@ from livvkit.util import options
 
 
 def parse_args(args=None):
-    parser = argparse.ArgumentParser(description=__doc__,
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
 
-    parser.add_argument('-e', '--extensions',
-                        action='store',
-                        nargs='+',
-                        default=None,
-                        help='Specify the location of the JSON configuration files for the extended V&V tests to run.')
-  
-    parser.add_argument('-o', '--out-dir',
-                        default=os.path.join(os.getcwd(), "vv_" + time.strftime("%Y-%m-%d")),
-                        help='Location to output the EVV webpages.')
+    parser.add_argument(
+        "-e",
+        "--extensions",
+        action="store",
+        nargs="+",
+        default=None,
+        help="Specify the location of the JSON configuration files for the extended V&V tests to run.",
+    )
 
-    parser.add_argument('-s', '--serve',
-                        nargs='?', type=int, const=8000,
-                        help=' '.join(['Start a simple HTTP server for the output website specified',
-                                       'by OUT_DIR on port SERVE.'
-                                       ])
-                        )
+    parser.add_argument(
+        "-o",
+        "--out-dir",
+        default=os.path.join(os.getcwd(), "vv_" + time.strftime("%Y-%m-%d")),
+        help="Location to output the EVV webpages.",
+    )
 
-    parser.add_argument('-p', '--pool-size',
-                        nargs='?',
-                        type=int,
-                        default=(options.mp.cpu_count() - 1 or 1),
-                        help='The number of multiprocessing processes to run '
-                             'analyses in. If zero, processes will run serially '
-                             'outside of the multiprocessing module.')
+    parser.add_argument(
+        "-s",
+        "--serve",
+        nargs="?",
+        type=int,
+        const=8000,
+        help=" ".join(
+            [
+                "Start a simple HTTP server for the output website specified",
+                "by OUT_DIR on port SERVE.",
+            ]
+        ),
+    )
 
-    parser.add_argument('--version',
-                        action='version',
-                        version='EVV {}'.format(evv4esm.__version__),
-                        help="Show EVV's version number and exit"
-                        )
+    parser.add_argument(
+        "-p",
+        "--pool-size",
+        nargs="?",
+        type=int,
+        default=(options.mp.cpu_count() - 1 or 1),
+        help="The number of multiprocessing processes to run "
+        "analyses in. If zero, processes will run serially "
+        "outside of the multiprocessing module.",
+    )
+
+    parser.add_argument(
+        "--version",
+        action="version",
+        version="EVV {}".format(evv4esm.__version__),
+        help="Show EVV's version number and exit",
+    )
 
     args = parser.parse_args(args)
 
     if args.extensions:
-        options.parse_args(['-V']+args.extensions + ['-o', args.out_dir])
-    
+        options.parse_args(["-V"] + args.extensions + ["-o", args.out_dir])
+
     from evv4esm import resources
+
     args.livv_resource_dir = livvkit.resource_dir
     livvkit.resource_dir = os.sep.join(resources.__path__)
     return args
 
 
 def main(cl_args=None):
-    """ Direct execution. """
+    """Direct execution."""
 
     if cl_args is None and len(sys.argv) > 1:
         cl_args = sys.argv[1:]
@@ -123,10 +142,14 @@ def main(cl_args=None):
         print(" -----------------------------------------------------------------")
         print("")
         for conf in livvkit.validation_model_configs:
-            validation_config = functions.merge_dicts(validation_config,
-                                                      functions.read_json(conf))
-            summary_elements.extend(scheduler.run_quiet("validation", validation, validation_config,
-                                                        group=False))
+            validation_config = functions.merge_dicts(
+                validation_config, functions.read_json(conf)
+            )
+            summary_elements.extend(
+                scheduler.run_quiet(
+                    "validation", validation, validation_config, group=False
+                )
+            )
         print(" -----------------------------------------------------------------")
         print("   Extensions test suite complete ")
         print(" -----------------------------------------------------------------")
@@ -137,28 +160,34 @@ def main(cl_args=None):
             index_data.write(result._repr_json())
         print("-------------------------------------------------------------------")
         print(" Done!  Results can be seen in a web browser at:")
-        print("   " + os.path.join(livvkit.output_dir, 'index.html'))
+        print("   " + os.path.join(livvkit.output_dir, "index.html"))
         print("-------------------------------------------------------------------")
 
     if args.serve:
         import http.server as server
         import socketserver as socket
 
-        httpd = socket.TCPServer(('', args.serve), server.SimpleHTTPRequestHandler)
+        httpd = socket.TCPServer(("", args.serve), server.SimpleHTTPRequestHandler)
 
         sa = httpd.socket.getsockname()
-        print('\nServing HTTP on {host} port {port} (http://{host}:{port}/)'.format(host=sa[0], port=sa[1]))
-        print('\nView the generated website by navigating to:')
-        print('\n    http://{host}:{port}/{path}/index.html'.format(host=sa[0], port=sa[1],
-                                                                    path=os.path.relpath(args.out_dir)
-                                                                    ))
-        print('\nExit by pressing `ctrl+c` to send a keyboard interrupt.\n')
+        print(
+            "\nServing HTTP on {host} port {port} (http://{host}:{port}/)".format(
+                host=sa[0], port=sa[1]
+            )
+        )
+        print("\nView the generated website by navigating to:")
+        print(
+            "\n    http://{host}:{port}/{path}/index.html".format(
+                host=sa[0], port=sa[1], path=os.path.relpath(args.out_dir)
+            )
+        )
+        print("\nExit by pressing `ctrl+c` to send a keyboard interrupt.\n")
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
-            print('\nKeyboard interrupt received, exiting.\n')
+            print("\nKeyboard interrupt received, exiting.\n")
             sys.exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

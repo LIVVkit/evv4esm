@@ -29,34 +29,49 @@
 
 
 __version_info__ = (0, 5, 1)
-__version__ = '.'.join(str(vi) for vi in __version_info__)
+__version__ = ".".join(str(vi) for vi in __version_info__)
 
-PASS_COLOR = '#389933'
-L_PASS_COLOR = '#93DA90'
+PASS_COLOR = "#389933"
+L_PASS_COLOR = "#93DA90"
 
-FAIL_COLOR = '#BF3F46'
-L_FAIL_COLOR = '#E68388'
+FAIL_COLOR = "#BF3F46"
+L_FAIL_COLOR = "#E68388"
 
-human_color_names = {'pass': ('green', 'light green'),
-                     PASS_COLOR: 'green',
-                     L_PASS_COLOR: 'light green',
-                     'fail': ('red', 'light red'),
-                     FAIL_COLOR: 'red',
-                     L_FAIL_COLOR: 'light red'}
+human_color_names = {
+    "pass": ("green", "light green"),
+    PASS_COLOR: "green",
+    L_PASS_COLOR: "light green",
+    "fail": ("red", "light red"),
+    FAIL_COLOR: "red",
+    L_FAIL_COLOR: "light red",
+}
 
-pf_color_picker = {'Pass': PASS_COLOR, 'pass': PASS_COLOR,
-                   'Accept': PASS_COLOR, 'accept': PASS_COLOR,
-                   'Fail': FAIL_COLOR, 'fail': FAIL_COLOR,
-                   'Reject': FAIL_COLOR, 'reject': FAIL_COLOR}
+pf_color_picker = {
+    "Pass": PASS_COLOR,
+    "pass": PASS_COLOR,
+    "Accept": PASS_COLOR,
+    "accept": PASS_COLOR,
+    "Fail": FAIL_COLOR,
+    "fail": FAIL_COLOR,
+    "Reject": FAIL_COLOR,
+    "reject": FAIL_COLOR,
+}
 
-light_pf_color_picker = {'Pass': L_PASS_COLOR, 'pass': L_PASS_COLOR,
-                         'Accept': L_PASS_COLOR, 'accept': L_PASS_COLOR,
-                         PASS_COLOR: L_PASS_COLOR,
-                         'Fail': L_FAIL_COLOR, 'fail': L_FAIL_COLOR,
-                         'Reject': L_FAIL_COLOR, 'reject': L_FAIL_COLOR,
-                         FAIL_COLOR: L_FAIL_COLOR}
+light_pf_color_picker = {
+    "Pass": L_PASS_COLOR,
+    "pass": L_PASS_COLOR,
+    "Accept": L_PASS_COLOR,
+    "accept": L_PASS_COLOR,
+    PASS_COLOR: L_PASS_COLOR,
+    "Fail": L_FAIL_COLOR,
+    "fail": L_FAIL_COLOR,
+    "Reject": L_FAIL_COLOR,
+    "reject": L_FAIL_COLOR,
+    FAIL_COLOR: L_FAIL_COLOR,
+}
 
 
 class EVVException(Exception):
     """Base class for EVV exceptions"""
+
     pass
