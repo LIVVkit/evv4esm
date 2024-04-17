@@ -64,7 +64,9 @@ def file_date_str(case_file, style="short", hist_name="h0"):
     return result.replace("{}.".format(hist_name), "").replace(".nc", "")
 
 
-def component_monthly_files(dir_, component, ninst, hist_name="h0", nmonth_max=12, date_style="short"):
+def component_monthly_files(
+    dir_, component, ninst, hist_name="h0", nmonth_max=12, date_style="short"
+):
     if date_style == "full":
         date_search = "????-??-??-??"
     elif date_style == "med":
@@ -72,7 +74,9 @@ def component_monthly_files(dir_, component, ninst, hist_name="h0", nmonth_max=1
     else:
         date_search = "????-??"
 
-    base = "{d}/*{c}_????.{n}.{ds}.nc".format(d=dir_, c=component, n=hist_name, ds=date_search)
+    base = "{d}/*{c}_????.{n}.{ds}.nc".format(
+        d=dir_, c=component, n=hist_name, ds=date_search
+    )
     search = os.path.normpath(base)
     result = sorted(glob.glob(search))
 
@@ -115,22 +119,36 @@ def gather_monthly_averages(ensemble_files, variable_set=None):
                     if variable_set is None:
                         variable_set = set(data.variables.keys())
                 except OSError as E:
-                    six.raise_from(BaseException('Could not open netCDF dataset: {}'.format(file_)), E)
+                    six.raise_from(
+                        BaseException(
+                            "Could not open netCDF dataset: {}".format(file_)
+                        ),
+                        E,
+                    )
 
                 for var in data.variables.keys():
                     if var not in variable_set:
                         continue
-                    if len(data.variables[var].shape) < 2 or var in ['time_bnds', 'date_written', 'time_written']:
+                    if len(data.variables[var].shape) < 2 or var in [
+                        "time_bnds",
+                        "date_written",
+                        "time_written",
+                    ]:
                         continue
-                    elif 'ncol' not in data.variables[var].dimensions:
+                    elif "ncol" not in data.variables[var].dimensions:
                         continue
                     else:
                         m = np.mean(data.variables[var][0, ...])
 
                     desc = "{long_name}{units}".format(**get_variable_meta(data, var))
-                    monthly_avgs.append((case, var, '{:04}'.format(inst), date_str, m, desc))
+                    monthly_avgs.append(
+                        (case, var, "{:04}".format(inst), date_str, m, desc)
+                    )
 
-    monthly_avgs = pd.DataFrame(monthly_avgs, columns=('case', 'variable', 'instance', 'date', 'monthly_mean', 'desc'))
+    monthly_avgs = pd.DataFrame(
+        monthly_avgs,
+        columns=("case", "variable", "instance", "date", "monthly_mean", "desc"),
+    )
     return monthly_avgs
 
 
