@@ -1,0 +1,13 @@
+{
+    "MVK": {
+        "module": "MODULE_LOCATION",
+        "test-case": "Test",
+        "test-dir": "TEST_DIRECTORY",
+        "ref-case": "Baseline",
+        "ref-dir": "BASELINE_DIRECTORY",
+        "var-set": "default",
+        "ninst": 30,
+        "component": "eam",
+        "img-fmt": "png"
+    }
+}
