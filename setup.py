@@ -32,7 +32,6 @@ import re
 
 from setuptools import setup
 
-
 here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, "README.md"), "r") as f:
     long_desc = f.read()
@@ -77,6 +76,9 @@ setup(
         "pybtex",
         "statsmodels>=0.14.0",
     ],
+    extras_require={
+        "dev": ["modelmimic", "black", "isort", "pytest", "pydoctor"],
+    },
     packages=["evv4esm"],
     entry_points={"console_scripts": ["evv = evv4esm.__main__:main"]},
     zip_safe=False,
