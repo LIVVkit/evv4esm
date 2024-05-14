@@ -2,6 +2,7 @@
 
 test/*_test
 test/*_test_*
+test/data
 
 #####=== Vim ===#####
 [._]*.s[a-w][a-z]
