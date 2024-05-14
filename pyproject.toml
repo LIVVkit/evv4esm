@@ -59,6 +59,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
+    "setuptools",
     "six",
     "numpy",
     "scipy",
