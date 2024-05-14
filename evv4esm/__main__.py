@@ -28,14 +28,15 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import argparse
 import os
 import sys
 import time
-import argparse
 
-import evv4esm
 import livvkit
 from livvkit.util import options
+
+import evv4esm
 
 
 def parse_args(args=None):
@@ -127,10 +128,9 @@ def main(cl_args=None):
     print("  Machine: " + livvkit.machine)
     print("  " + livvkit.comment)
 
+    from livvkit import elements, scheduler
     from livvkit.components import validation
-    from livvkit import scheduler
     from livvkit.util import functions
-    from livvkit import elements
 
     livvkit.pool_size = args.pool_size
     if args.extensions:

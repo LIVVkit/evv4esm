@@ -30,17 +30,15 @@
 
 """E3SM specific ensemble functions."""
 
-import six
-
+import glob
 import os
 import re
-import glob
-
 from collections import OrderedDict
 from functools import partial
 
 import numpy as np
 import pandas as pd
+import six
 from netCDF4 import Dataset
 
 

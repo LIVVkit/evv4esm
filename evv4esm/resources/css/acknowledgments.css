@@ -3,7 +3,7 @@
     width: 80%;
     min-width: 800px;
     padding: 1em 0px 0.5em 0px;
-    border: 0px solid white; 
+    border: 0px solid white;
     margin-left: auto;
     margin-right: auto;
     margin-bottom: 120px;
@@ -25,7 +25,7 @@
 }
 
 #acklogo {
-    margin-left: auto; 
+    margin-left: auto;
     margin-right: auto;
     text-align: justify;
 }
@@ -40,7 +40,7 @@
     vertical-align: top;
     display: inline-block;
 }
-    
+
 #logoORNL {
     padding-top: 30px;
     height: 75px;

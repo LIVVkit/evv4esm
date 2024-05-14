@@ -1,10 +1,11 @@
+import json
+from collections import namedtuple
 from pathlib import Path
-import evv4esm
+
+from modelmimic import mimic as mmc
+
 import evv4esm  # pylint: disable=import-error
 from evv4esm.__main__ import main as evv  # pylint: disable=import-error
-from modelmimic import mimic as mmc
-from collections import namedtuple
-import json
 
 evv_lib_dir = Path(evv4esm.__file__).parent.resolve()
 mimic_lib_dir = Path(mmc.__file__).parent.resolve()
@@ -19,7 +20,9 @@ def gen_data_run_evv(evv_test):
 
     # Load the EVV4ESM configuration template
     with open(
-        Path(evv_lib_dir.parent, "test", f"{evv_test}_template.json"), "r", encoding="utf-8"
+        Path(evv_lib_dir.parent, "test", f"{evv_test}_template.json"),
+        "r",
+        encoding="utf-8",
     ) as _template:
         evv_cfg_template = json.loads(_template.read())
 
