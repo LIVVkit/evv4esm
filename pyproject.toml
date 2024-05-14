@@ -28,7 +28,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 [build-system]
-requires = ["setuptools>=61.0", "setuptools_scm[toml]>=6.2"]
+requires = ["setuptools>=64", "setuptools_scm[toml]>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -66,7 +66,7 @@ dependencies = [
     "livvkit>=3.0.1",
     "netCDF4",
     "matplotlib",
-    "pybtex",
+    "pybtex>=0.24.0",
     "statsmodels>=0.14.0",
 ]
 dynamic = ["version"]
