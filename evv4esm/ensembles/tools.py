@@ -30,12 +30,12 @@
 
 """General tools for working with ensembles."""
 import os
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
 
-from evv4esm import pf_color_picker, light_pf_color_picker
+from evv4esm import light_pf_color_picker, pf_color_picker
 
 
 def monthly_to_annual_avg(var_data, cal="ignore"):

@@ -1,0 +1,95 @@
+# coding=utf-8
+# Copyright (c) 2018-2024 UT-BATTELLE, LLC
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this
+# list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+[build-system]
+requires = ["setuptools>=64", "setuptools_scm[toml]>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+authors = [
+    { name = "Michael Kelleher", email = "kelleherme@ornl.gov" },
+    { name = "Joseph H. Kennedy", email = "kennedyjh@ornl.gov" },
+]
+name = "evv4esm"
+requires-python = ">=3.6"
+description = "Extended verification and validation for earth system models"
+readme = { file = "README.md", content-type = "text/markdown" }
+license = { text = "BSD-3-Clause" }
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Testing",
+    "License :: OSI Approved :: BSD License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "setuptools",
+    "six",
+    "numpy",
+    "scipy",
+    "pandas>=2.1.0",
+    "livvkit>=3.0.1",
+    "netCDF4",
+    "matplotlib",
+    "pybtex>=0.24.0",
+    "statsmodels>=0.14.0",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+dev = ["modelmimic", "ruff", "black", "isort", "pytest"]
+
+[project.scripts]
+evv = "evv4esm.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/LIVVkit/evv4esm"
+
+[tool.setuptools.dynamic]
+version = { attr = "evv4esm.__version__" }
+
+[tool.pydoctor]
+project-name = "evv4esm"
+make-html = true
+html-output = "./docs"
+docformat = "numpy"
+intersphinx = "https://docs.python.org/3/objects.inv"
+theme = "readthedocs"
+privacy = ["PRIVATE:**.__*__", "PUBLIC:**.__init__"]
+add-package = ["./evv4esm"]

@@ -52,15 +52,16 @@ from pprint import pprint
 import livvkit
 import numpy as np
 import pandas as pd
-from evv4esm import EVVException, human_color_names
-from evv4esm.ensembles import e3sm
-from evv4esm.ensembles.tools import prob_plot
-from evv4esm.utils import bib2html
 from livvkit import elements as el
 from livvkit.util import functions as fn
 from livvkit.util.LIVVDict import LIVVDict
 from scipy import stats
 from statsmodels.stats import multitest as smm
+
+from evv4esm import EVVException, human_color_names
+from evv4esm.ensembles import e3sm
+from evv4esm.ensembles.tools import prob_plot
+from evv4esm.utils import bib2html
 
 
 def variable_set(name):

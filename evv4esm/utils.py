@@ -1,10 +1,8 @@
 # coding=utf-8
 
-import six
-
 import pybtex.database
 import pybtex.io
-
+import six
 from pybtex.backends.html import Backend as BaseBackend
 from pybtex.style.formatting.plain import Style as PlainStyle
 

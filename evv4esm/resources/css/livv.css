@@ -58,10 +58,10 @@ a {
 }
 
 #header-icon {
-    float: left; 
-    padding: 12px; 
+    float: left;
+    padding: 12px;
     padding-left: 15px;
-    width: 70px; 
+    width: 70px;
 }
 
 #header-home {
@@ -149,7 +149,7 @@ td {
 }
 
 /******************************************************************************
-  Element Styling 
+  Element Styling
 ******************************************************************************/
 .error {}
 
