@@ -13,14 +13,14 @@ evv_tests = {"TSC": "tsc.py", "MVK": "ks.py"}
 
 
 def gen_data_run_evv(evv_test):
-    _args = cl_args(
-        cfg=Path(mimic_lib_dir, "config", f"{evv_test}.toml")
-    )
+    _args = cl_args(cfg=Path(mimic_lib_dir, "config", f"{evv_test}.toml"))
     # Generate data for all the tests (should be a pass b4b / pass non-b4b / fail)
     out_dirs = mmc.main(_args)
 
     # Load the EVV4ESM configuration template
-    with open(f"{evv_test}_template.json", "r", encoding="utf-8") as _template:
+    with open(
+        Path(evv_lib_dir.parent, "test", f"{evv_test}_template.json"), "r", encoding="utf-8"
+    ) as _template:
         evv_cfg_template = json.loads(_template.read())
 
     evv_cfg = {}
