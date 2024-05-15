@@ -1,0 +1,33 @@
+{
+    "TSC": {
+        "module": "MODULE_LOCATION",
+        "test-case": "Test",
+        "test-dir": "TEST_DIRECTORY",
+        "ref-case": "Baseline",
+        "ref-dir": "BASELINE_DIRECTORY",
+        "var-set": "default",
+        "time-slice": [
+            10,
+            600
+        ],
+        "inspect-times": [
+            300,
+            450,
+            600
+        ],
+        "variables": [
+            "T",
+            "Q",
+            "V",
+            "CLDLIQ",
+            "CLDICE",
+            "NUMLIQ",
+            "NUMICE",
+            "num_a1",
+            "num_a2",
+            "num_a3"
+        ],
+        "p-threshold": 0.005,
+        "component": "eam"
+    }
+}

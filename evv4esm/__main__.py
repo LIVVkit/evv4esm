@@ -28,14 +28,15 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import argparse
 import os
 import sys
 import time
-import argparse
 
-import evv4esm
 import livvkit
 from livvkit.util import options
+
+import evv4esm
 
 
 def parse_args(args=None):
@@ -110,16 +111,16 @@ def main(cl_args=None):
         cl_args = sys.argv[1:]
     args = parse_args(cl_args)
 
-    print("--------------------------------------------------------------------")
-    print("                   ______  __      __ __      __                    ")
-    print("                  |  ____| \ \    / / \ \    / /                    ")
-    print("                  | |__     \ \  / /   \ \  / /                     ")
-    print("                  |  __|     \ \/ /     \ \/ /                      ")
-    print("                  | |____     \  /       \  /                       ")
-    print("                  |______|     \/         \/                        ")
-    print("                                                                    ")
-    print("    Extended Verification and Validation for Earth System Models    ")
-    print("--------------------------------------------------------------------")
+    print(r"--------------------------------------------------------------------")
+    print(r"                   ______  __      __ __      __                    ")
+    print(r"                  |  ____| \ \    / / \ \    / /                    ")
+    print(r"                  | |__     \ \  / /   \ \  / /                     ")
+    print(r"                  |  __|     \ \/ /     \ \/ /                      ")
+    print(r"                  | |____     \  /       \  /                       ")
+    print(r"                  |______|     \/         \/                        ")
+    print(r"                                                                    ")
+    print(r"    Extended Verification and Validation for Earth System Models    ")
+    print(r"--------------------------------------------------------------------")
     print("")
     print("  Current run: " + livvkit.timestamp)
     print("  User: " + livvkit.user)
@@ -127,10 +128,9 @@ def main(cl_args=None):
     print("  Machine: " + livvkit.machine)
     print("  " + livvkit.comment)
 
+    from livvkit import elements, scheduler
     from livvkit.components import validation
-    from livvkit import scheduler
     from livvkit.util import functions
-    from livvkit import elements
 
     livvkit.pool_size = args.pool_size
     if args.extensions:

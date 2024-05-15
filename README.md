@@ -20,6 +20,6 @@ Want to send us a private message?
 * github: @mkstratos
 * email: <a href="mailto:kelleherme@ornl.gov">kelleherme [at] ornl.gov</a>
 
-**Joseph H. Kennedy** 
+**Joseph H. Kennedy**
 * github: @jhkennedy
 * email: <a href="mailto:kennedyjh@ornl.gov">kennedyjh [at] ornl.gov</a>

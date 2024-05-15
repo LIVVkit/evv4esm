@@ -52,24 +52,23 @@ import glob
 import os
 from collections import OrderedDict
 from itertools import groupby
-from pprint import pprint
 from pathlib import Path
-
-import numpy as np
-import pandas as pd
-import matplotlib.ticker as tkr
-import matplotlib.pyplot as plt
-from scipy import stats
-from netCDF4 import Dataset
+from pprint import pprint
 
 import livvkit
+import matplotlib.pyplot as plt
+import matplotlib.ticker as tkr
+import numpy as np
+import pandas as pd
 from livvkit import elements as el
 from livvkit.util import functions as fn
 from livvkit.util.LIVVDict import LIVVDict
+from netCDF4 import Dataset
+from scipy import stats
 
+from evv4esm import human_color_names, light_pf_color_picker, pf_color_picker
 from evv4esm.ensembles import e3sm
 from evv4esm.utils import bib2html
-from evv4esm import pf_color_picker, light_pf_color_picker, human_color_names
 
 
 def parse_args(args=None):
