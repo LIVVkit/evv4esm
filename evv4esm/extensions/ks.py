@@ -222,10 +222,13 @@ def run(name, config):
     details, img_gal = main(args)
 
     table_data = pd.DataFrame(details).T
+    uc_rejections = (table_data["K-S test stat"] < args.alpha).sum()
+
     _hdrs = [
         "h0",
         "K-S test stat",
         "K-S test p-val",
+        "K-S test p-val cor",
         "T test stat",
         "T test p-val",
         "mean test case",
@@ -268,6 +271,7 @@ def run(name, config):
                     if len(rejects) < critical
                     else "statistically different"
                 ],
+                "Un-corrected rejections": [uc_rejections],
             }
         ),
     )
@@ -327,6 +331,7 @@ def summarize_result(results_page):
             summary["Rejecting"] = elem.data["Rejecting"][0]
             summary["Critical value"] = elem.data["Critical value"][0]
             summary["Ensembles"] = elem.data["Ensembles"][0]
+            summary["Uncorrected Rejections"] = elem.data["Un-corrected rejections"][0]
             break
 
     return {"": summary}
@@ -397,17 +402,16 @@ def compute_details(annual_avgs, common_vars, args):
     # Create a null hypothesis rejection column for un-corrected p-values
     detail_df["h0_uc"] = detail_df["K-S test p-val"] < args.alpha
 
-    (detail_df["h0_c"], detail_df["pval_c"]) = smm.fdrcorrection(
-        detail_df["K-S test p-val"], alpha=args.alpha, method="n", is_sorted=False
+    (detail_df["h0_c"], detail_df["K-S test p-val cor"]) = smm.fdrcorrection(
+        detail_df["K-S test p-val"], alpha=args.alpha, method="p", is_sorted=False
     )
-
     if args.uncorrected:
         _testkey = "h0_uc"
     else:
         _testkey = "h0_c"
 
     for var in common_vars:
-        details[var]["K-S test p-val"] = detail_df.loc[var, "pval_c"]
+        details[var]["K-S test p-val cor"] = detail_df.loc[var, "K-S test p-val cor"]
 
         if details[var]["T test stat"] is None:
             details[var]["h0"] = "-"
