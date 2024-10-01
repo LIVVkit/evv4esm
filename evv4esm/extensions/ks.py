@@ -222,8 +222,7 @@ def run(name, config):
     details, img_gal = main(args)
 
     table_data = pd.DataFrame(details).T
-    uc_rejections = (table_data["K-S test stat"] < args.alpha).sum()
-
+    uc_rejections = (table_data["K-S test p-val"] < args.alpha).sum()
     _hdrs = [
         "h0",
         "K-S test stat",
