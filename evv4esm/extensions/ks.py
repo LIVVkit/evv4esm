@@ -122,7 +122,7 @@ def parse_args(args=None):
         "--ninst",
         default=30,
         type=int,
-        help="The number of instances (should be the same for " "both cases).",
+        help="The number of instances (should be the same for both cases).",
     )
 
     parser.add_argument(
