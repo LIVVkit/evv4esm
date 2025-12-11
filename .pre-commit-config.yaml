@@ -18,6 +18,7 @@ repos:
       - id: ruff-check
       # Run the formatter.
       - id: ruff-format
+        args: [--verbose]
   - repo: https://github.com/pycqa/isort
     rev: 6.0.1
     hooks:
