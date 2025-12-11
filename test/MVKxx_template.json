@@ -1,0 +1,14 @@
+{
+    "MVKxx": {
+        "module": "MODULE_LOCATION",
+        "test-case": "Test",
+        "test-dir": "TEST_DIRECTORY",
+        "ref-case": "Baseline",
+        "ref-dir": "BASELINE_DIRECTORY",
+        "var-set": "scream",
+        "ninst": 30,
+        "component": "scream",
+        "img-fmt": "png",
+        "hist-name": "h"
+    }
+}

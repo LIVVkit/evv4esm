@@ -57,7 +57,6 @@ def file_date_str(case_file, style="short", hist_name="h0"):
         search_regex = r"{}\.[0-9]+-[0-9]+.nc".format(hist_name)
     else:
         search_regex = r"{}\.[0-9]+-[0-9]+.nc".format(hist_name)
-
     result = re.search(search_regex, case_file).group(0)
     return result.replace("{}.".format(hist_name), "").replace(".nc", "")
 
@@ -103,13 +102,13 @@ def get_variable_meta(dataset, var_name):
     return {"long_name": _name, "units": _units}
 
 
-def gather_monthly_averages(ensemble_files, variable_set=None):
+def gather_monthly_averages(ensemble_files, variable_set=None, hist_name="h0"):
     monthly_avgs = []
     for case, inst_dict in six.iteritems(ensemble_files):
         for inst, i_files in six.iteritems(inst_dict):
             # Get monthly averages from files
             for file_ in i_files:
-                date_str = file_date_str(file_)
+                date_str = file_date_str(file_, hist_name=hist_name)
 
                 data = None
                 try:

@@ -10,7 +10,7 @@ from evv4esm.__main__ import main as evv  # pylint: disable=import-error
 evv_lib_dir = Path(evv4esm.__file__).parent.resolve()
 mimic_lib_dir = Path(mmc.__file__).parent.resolve()
 cl_args = namedtuple("Args", ["cfg"])
-evv_tests = {"TSC": "tsc.py", "MVK": "ks.py"}
+evv_tests = {"TSC": "tsc.py", "MVK": "ks.py", "MVKxx": "ks.py", "MVKO": "kso.py"}
 
 
 def gen_data_run_evv(evv_test):
@@ -39,7 +39,7 @@ def gen_data_run_evv(evv_test):
         json.dump(evv_cfg, config_file, indent=4)
 
     evv_out_dir = Path(f"{evv_test}_test_output")
-    evv(["-e", str(json_file), "-o", str(evv_out_dir)])
+    evv(["-e", str(json_file), "-o", str(evv_out_dir), "-p", 0])
 
     with open(Path(evv_out_dir, "index.json")) as evv_f:
         evv_status = json.load(evv_f)
@@ -55,6 +55,14 @@ def gen_data_run_evv(evv_test):
             assert status[_index], f"{_index} SHOULD BE PASS IS FAIL"
         else:
             assert not status[_index], f"{_index} SHOULD BE FAIL IS PASS"
+
+
+def test_evv_mvko():
+    gen_data_run_evv("MVKO")
+
+
+def test_evv_mvkxx():
+    gen_data_run_evv("MVKxx")
 
 
 def test_evv_tsc():

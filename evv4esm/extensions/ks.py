@@ -122,7 +122,7 @@ def parse_args(args=None):
         "--ninst",
         default=30,
         type=int,
-        help="The number of instances (should be the same for " "both cases).",
+        help="The number of instances (should be the same for both cases).",
     )
 
     parser.add_argument(
@@ -156,6 +156,13 @@ def parse_args(args=None):
 
     parser.add_argument(
         "--alpha", default=0.05, type=float, help="Alpha threshold for pass / fail"
+    )
+
+    parser.add_argument(
+        "--hist-name",
+        default="h0",
+        help="History file extension [eam: h0, scream: h, mpas: hist], default: h0",
+        type=str,
     )
 
     args, _ = parser.parse_known_args(args)
@@ -287,10 +294,13 @@ def case_files(args):
     if args.test_case == args.ref_case:
         key1 += "1"
         key2 += "2"
-
     f_sets = {
-        key1: e3sm.component_monthly_files(args.test_dir, args.component, args.ninst),
-        key2: e3sm.component_monthly_files(args.ref_dir, args.component, args.ninst),
+        key1: e3sm.component_monthly_files(
+            args.test_dir, args.component, args.ninst, hist_name=args.hist_name
+        ),
+        key2: e3sm.component_monthly_files(
+            args.ref_dir, args.component, args.ninst, hist_name=args.hist_name
+        ),
     }
 
     for key in f_sets:
@@ -428,7 +438,9 @@ def main(args):
         args.test_case = key1
         args.ref_case = key2
 
-    monthly_avgs = e3sm.gather_monthly_averages(ens_files, args.var_set)
+    monthly_avgs = e3sm.gather_monthly_averages(
+        ens_files, args.var_set, hist_name=args.hist_name
+    )
     annual_avgs = (
         monthly_avgs.groupby(["case", "variable", "instance"])
         .monthly_mean.aggregate(monthly_to_annual_avg)
