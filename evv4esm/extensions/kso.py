@@ -43,6 +43,7 @@ critical number of rejecting variables. The critical value, α, is obtained from
 an empirically derived approximate null distribution of t using resampling
 techniques.
 """
+
 import argparse
 import os
 from collections import OrderedDict
@@ -386,7 +387,6 @@ def main(args):
     images = {"accept": [], "reject": [], "-": []}
     details = LIVVDict()
     for var in sorted(test_vars):
-
         var_1 = e3sm.load_mpas_climatology_ensemble(ens_files[key1], var)
         var_2 = e3sm.load_mpas_climatology_ensemble(ens_files[key2], var)
 

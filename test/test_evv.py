@@ -60,11 +60,14 @@ def gen_data_run_evv(evv_test):
 def test_evv_mvko():
     gen_data_run_evv("MVKO")
 
+
 def test_evv_mvkxx():
     gen_data_run_evv("MVKxx")
 
+
 def test_evv_tsc():
     gen_data_run_evv("TSC")
+
 
 def test_evv_mvk():
     gen_data_run_evv("MVK")

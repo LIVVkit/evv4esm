@@ -53,7 +53,7 @@ def bib2html(bib, style=None, backend=None):
         return _bib2html_bibdata(bib, style=style, backend=backend)
     else:
         raise NotImplementedError(
-            "I do not now how to convert a {} type to a bibliography".format(type(bib))
+            f"I do not now how to convert a {type(bib)} type to a bibliography"
         )
 
 

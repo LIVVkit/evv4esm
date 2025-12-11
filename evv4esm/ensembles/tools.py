@@ -29,6 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """General tools for working with ensembles."""
+
 import os
 
 import matplotlib.pyplot as plt

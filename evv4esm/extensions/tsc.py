@@ -227,10 +227,11 @@ def main(args):
             for ff in truth_files
         ]
         for tt, time in enumerate(times):
-            with Dataset(truth_ens[instance][tt]) as truth, Dataset(
-                ref_ens[instance][tt]
-            ) as ref, Dataset(test_ens[instance][tt]) as test:
-
+            with (
+                Dataset(truth_ens[instance][tt]) as truth,
+                Dataset(ref_ens[instance][tt]) as ref,
+                Dataset(test_ens[instance][tt]) as test,
+            ):
                 truth_plt, truth_ps = pressure_layer_thickness(truth)
                 ref_plt, ref_ps = pressure_layer_thickness(ref)
                 test_plt, test_ps = pressure_layer_thickness(test)
@@ -809,7 +810,6 @@ def boxplot_delta_rmsd(args, delta_rmsd, null_hypothesis, img_file_format):
             list(ax1.get_yticklabels()),
             list(ax2.get_yticklabels()),
         ):
-
             land_var_color = pf_color_picker[
                 null_hypothesis[
                     (null_hypothesis["seconds"] == time)
@@ -996,7 +996,6 @@ def errorbars_delta_rmsd(args, delta_rmsd, null_hypothesis, img_file_format):
         for ii, var1, var2 in zip(
             yvals - 1, list(ax1.get_yticklabels()), list(ax2.get_yticklabels())
         ):
-
             var1.set_color(land_colors[ii])
             var2.set_color(ocean_colors[ii])
 
