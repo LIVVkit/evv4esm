@@ -105,6 +105,14 @@ function drawContent() {
     var html = data["Page"]["Data"];
     $("#content").append(html);
     $("#tabs").tabs();
+    if (html.includes("dataTable")) {
+        $(document).ready(function() {
+        $('table.dataTable').DataTable({
+            scrollX: true,
+            scrollY: true,
+            paging: false
+        });});
+    }
 }
 
 /**

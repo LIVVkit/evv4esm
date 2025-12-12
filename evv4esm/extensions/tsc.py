@@ -131,7 +131,7 @@ def run(name, config, print_details=False):
                     tbl_data[_hdr].append(val)
 
             detail_tables[level].append(
-                el.Table(title=f"{level.capitalize()}, {_time}", data=tbl_data)
+                el.Table(title=f"{level.capitalize()}, {_time}", data=tbl_data, data_table=True)
             )
 
     tabs = el.Tabs(
