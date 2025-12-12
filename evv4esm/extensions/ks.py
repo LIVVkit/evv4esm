@@ -165,6 +165,15 @@ def parse_args(args=None):
         type=str,
     )
 
+    parser.add_argument(
+        "--use-test",
+        default="K-S",
+        help=(
+            "Test to use for determination of global PASS/FAIL, "
+            "all others provided as information"
+        ),
+    )
+
     args, _ = parser.parse_known_args(args)
 
     # use config file arguments, but override with command line arguments
@@ -225,23 +234,24 @@ def run(name, config):
 
     args.img_dir = os.path.join(livvkit.output_dir, "validation", "imgs", name)
     fn.mkdir_p(args.img_dir)
-
-    details, img_gal = main(args)
+    tests = ["K-S", "M-W", "C-VM", "T"]
+    details, img_gal = main(args, tests)
 
     table_data = pd.DataFrame(details).T
     uc_rejections = (table_data["K-S test p-val"] < args.alpha).sum()
-    _hdrs = [
-        "h0",
-        "K-S test stat",
-        "K-S test p-val",
-        "K-S test p-val cor",
-        "T test stat",
-        "T test p-val",
-        "mean test case",
-        "mean ref. case",
-        "std test case",
-        "std ref. case",
-    ]
+    _hdrs = ["h0"]
+    for _test in tests:
+        _hdrs.extend(
+            [f"{_test} test stat", f"{_test} test p-val", f"{_test} test p-val cor"]
+        )
+    _hdrs.extend(
+        [
+            "mean test case",
+            "mean ref. case",
+            "std test case",
+            "std ref. case",
+        ]
+    )
     table_data = table_data[_hdrs]
     for _hdr in _hdrs[1:]:
         table_data[_hdr] = table_data[_hdr].apply(col_fmt)
@@ -367,7 +377,56 @@ def populate_metadata():
     return metadata
 
 
-def compute_details(annual_avgs, common_vars, args):
+def test_compare(annuals_1, annuals_2, test_name):
+    """
+    Generate statistic and p-value for a statistical test with pre-specified parameters
+
+    Parameters
+    ----------
+        annuals_1 : array_like
+            Annual global mean for ensemble 1 (ref) (n ensembles)
+        annuals_2 : array_like
+            Annual global mean for ensemble 2 (test) (n ensembles)
+        test_name : str
+            Name of test (one of "T", "K-S", "M-W", or "C-VM" for Student's t-test,
+            Kolmogorov-Smirnov test, Mann-Whitney U test, or Cramer-von Mises test
+            respectively)
+
+    Raises
+    ------
+        NotImplementedError : If `test_name` is not implemented
+
+    Returns
+    -------
+        _stat : float
+            Test statistic
+        _pval : float
+            P-value
+
+    """
+    if test_name == "T":
+        _stat, _pval = stats.ttest_ind(
+            annuals_1, annuals_2, equal_var=False, nan_policy=str("omit")
+        )
+    elif test_name == "K-S":
+        _stat, _pval = stats.ks_2samp(annuals_1, annuals_2)
+    elif test_name == "M-W":
+        _res = stats.mannwhitneyu(annuals_1, annuals_2)
+        _stat = _res.statistic
+        _pval = _res.pvalue
+    elif test_name == "C-VM":
+        _res = stats.cramervonmises_2samp(annuals_1, annuals_2)
+        _stat, _pval = _res.statistic, _res.pvalue
+    else:
+        _stat = np.nan
+        _pval = np.nan
+        raise NotImplementedError(
+            f"THE TEST {test_name} IS NOT (YET) IMPLEMENTED IN EVV"
+        )
+    return _stat, _pval
+
+
+def compute_details(annual_avgs, common_vars, args, tests):
     """Compute the detail table, perform a T Test and K-S test for each variable."""
     details = LIVVDict()
     for var in sorted(common_vars):
@@ -378,20 +437,14 @@ def compute_details(annual_avgs, common_vars, args):
             "case == @args.ref_case & variable == @var"
         ).monthly_mean.values
 
-        ttest_t, ttest_p = stats.ttest_ind(
-            annuals_1, annuals_2, equal_var=False, nan_policy=str("omit")
-        )
-        ks_d, ks_p = stats.ks_2samp(annuals_1, annuals_2)
-
-        if np.isnan([ttest_t, ttest_p]).any() or np.isinf([ttest_t, ttest_p]).any():
-            ttest_t = None
-            ttest_p = None
-
-        details[var]["T test stat"] = ttest_t
-        details[var]["T test p-val"] = ttest_p
-
-        details[var]["K-S test stat"] = ks_d
-        details[var]["K-S test p-val"] = ks_p
+        # Compute all test statistics and p-values
+        for _test in tests:
+            _stat, _pval = test_compare(annuals_1, annuals_2, _test)
+            if np.isnan([_stat, _pval]).any() or np.isinf([_stat, _pval]).any():
+                _stat = None
+                _pval = None
+            details[var][f"{_test} test stat"] = _stat
+            details[var][f"{_test} test p-val"] = _pval
 
         details[var]["mean test case"] = annuals_1.mean()
         details[var]["mean ref. case"] = annuals_2.mean()
@@ -409,18 +462,28 @@ def compute_details(annual_avgs, common_vars, args):
     # Convert to a Dataframe, transposed so that the index is the variable name
     detail_df = pd.DataFrame(details).T
     # Create a null hypothesis rejection column for un-corrected p-values
-    detail_df["h0_uc"] = detail_df["K-S test p-val"] < args.alpha
+    for _test in tests:
+        detail_df[f"h0_uc_{_test}"] = detail_df[f"{_test} test p-val"] < args.alpha
 
-    (detail_df["h0_c"], detail_df["K-S test p-val cor"]) = smm.fdrcorrection(
-        detail_df["K-S test p-val"], alpha=args.alpha, method="p", is_sorted=False
-    )
+        (detail_df[f"h0_c_{_test}"], detail_df[f"{_test} test p-val cor"]) = (
+            smm.fdrcorrection(
+                detail_df[f"{_test} test p-val"],
+                alpha=args.alpha,
+                method="p",
+                is_sorted=False,
+            )
+        )
+
     if args.uncorrected:
-        _testkey = "h0_uc"
+        _testkey = f"h0_uc_{args.use_test}"
     else:
-        _testkey = "h0_c"
+        _testkey = f"h0_c_{args.use_test}"
 
     for var in common_vars:
-        details[var]["K-S test p-val cor"] = detail_df.loc[var, "K-S test p-val cor"]
+        for _test in tests:
+            details[var][f"{_test} test p-val cor"] = detail_df.loc[
+                var, f"{_test} test p-val cor"
+            ]
 
         if details[var]["T test stat"] is None:
             details[var]["h0"] = "-"
@@ -432,7 +495,7 @@ def compute_details(annual_avgs, common_vars, args):
     return details
 
 
-def main(args):
+def main(args, tests):
     ens_files, key1, key2 = case_files(args)
     if args.test_case == args.ref_case:
         args.test_case = key1
@@ -459,7 +522,7 @@ def main(args):
         )
 
     images = {"accept": [], "reject": [], "-": []}
-    details = compute_details(annual_avgs, common_vars, args)
+    details = compute_details(annual_avgs, common_vars, args, tests)
 
     for var in sorted(common_vars):
         annuals_1 = annual_avgs.query(
@@ -521,4 +584,4 @@ def main(args):
 
 
 if __name__ == "__main__":
-    print_details(main(parse_args()))
+    print_details(main(parse_args(), ["K-S", "M-W", "C-VM", "T"]))
