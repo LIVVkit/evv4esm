@@ -64,7 +64,7 @@ dependencies = [
     "numpy",
     "scipy",
     "pandas>=2.1.0",
-    "livvkit>=3.0.1",
+    "livvkit>=3.3.0",
     "netCDF4",
     "matplotlib",
     "pybtex>=0.24.0",
