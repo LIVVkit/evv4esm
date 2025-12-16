@@ -1,6 +1,10 @@
 /******************************************************************************
   Basic Styling Overrides
 ******************************************************************************/
+:root{
+    --dtfc-thead-cell_background:  #512E5F;
+    --dtfc-tbody-cell_background:  #512E5F;
+}
 html {
     font-family: 'Lato', helvetica, sans-serif;
     height: 100%;

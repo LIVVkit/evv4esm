@@ -77,7 +77,10 @@ function drawNav() {
     // Go through each category: numerics, verification, performance, and validation
     for (var el_idx in data["elements"]) {
         if (data["elements"][el_idx] != null && Object.keys(data["elements"][el_idx]["Table"]["data"]).length > 0) {
-            html += "<h3>" + data["elements"][el_idx]["Table"]["title"] + "</h3>\n";
+            header = "<h3>" + data["elements"][el_idx]["Table"]["title"] + "</h3>\n";
+            if (!html.includes(header) == true) {
+                html += header;
+            }
             var testList = Array.from(new Set(data["elements"][el_idx]["Table"]["index"])).sort();
             for (var idx in testList) {
                 html += "<a href=" + indexPath + "/" + data["elements"][el_idx]["Table"]["title"].toLowerCase() +
@@ -109,8 +112,17 @@ function drawContent() {
         $(document).ready(function() {
         $('table.dataTable').DataTable({
             scrollX: true,
-            scrollY: true,
-            paging: false
+            scrollCollapse: true,
+            scrollY: '20em',
+            colReorder: true,
+            fixedHeader: true,
+            fixedColumns: true,
+            paging: false,
+            layout: {
+                bottomStart: {
+                    buttons: [{"extend": "csv", "text": "Save CSV"}]
+                }
+            }
         });});
     }
 }
