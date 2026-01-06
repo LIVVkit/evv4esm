@@ -240,9 +240,17 @@ def run(name, config):
             table_data[_hdr] = table_data[_hdr].apply(col_fmt_ff)
 
     tables = [
-        el.Table("Rejected", data=table_data[table_data["h0"] == "reject"], data_table=True),
-        el.Table("Accepted", data=table_data[table_data["h0"] == "accept"], data_table=True),
-        el.Table("Null", data=table_data[~table_data["h0"].isin(["accept", "reject"])], data_table=True),
+        el.Table(
+            "Rejected", data=table_data[table_data["h0"] == "reject"], data_table=True
+        ),
+        el.Table(
+            "Accepted", data=table_data[table_data["h0"] == "accept"], data_table=True
+        ),
+        el.Table(
+            "Null",
+            data=table_data[~table_data["h0"].isin(["accept", "reject"])],
+            data_table=True,
+        ),
     ]
 
     bib_html = bib2html(os.path.join(os.path.dirname(__file__), "ks.bib"))
@@ -415,16 +423,12 @@ def main(args):
         if null_reject_post_correct <= args.critical:
             test_result = "accept"
 
-        details[var][f"Pre-Correction N < {args.alpha}"] = (
-            null_reject_pre_correct
-        )
+        details[var][f"Pre-Correction N < {args.alpha}"] = null_reject_pre_correct
         details[var][f"Pre-Correction % < {args.alpha}"] = (
             100 * null_reject_pre_correct / np.prod(p_val.shape)
         )
 
-        details[var][f"Post-Correction N < {args.alpha}"] = (
-            null_reject_post_correct
-        )
+        details[var][f"Post-Correction N < {args.alpha}"] = null_reject_post_correct
 
         details[var][f"Post-Correction % < {args.alpha}"] = (
             100 * null_reject_post_correct / np.prod(p_val.shape)
@@ -436,7 +440,12 @@ def main(args):
         mask_value = -0.9999e33
         annuals_1 = np.ma.masked_less(annuals_1, mask_value)
         annuals_2 = np.ma.masked_less(annuals_2, mask_value)
-        agg_fcns = [(np.nanmax, "max"), (np.nanmin, "min"), (np.nanmean, "mean"), (np.nanstd, "std")]
+        agg_fcns = [
+            (np.nanmax, "max"),
+            (np.nanmin, "min"),
+            (np.nanmean, "mean"),
+            (np.nanstd, "std"),
+        ]
         for _fcn, fname in agg_fcns:
             for _case, _data in [("test", annuals_1), ("ref.", annuals_2)]:
                 details[var][f"{fname} {_case} case"] = _fcn(_data)

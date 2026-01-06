@@ -59,8 +59,10 @@ def gen_data_run_evv(evv_test, multiproc=False):
         else:
             assert not status[_index], f"{_index} SHOULD BE FAIL IS PASS"
 
+
 def test_evv_mvko_multiproc():
     gen_data_run_evv("MVKO", multiproc=True)
+
 
 def test_evv_mvko():
     gen_data_run_evv("MVKO")
