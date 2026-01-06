@@ -36,12 +36,15 @@ average in the standard monthly model output between the two simulations.
 
 The (per variable) null hypothesis uses the non-parametric, two-sample (n and m)
 Kolmogorov-Smirnov test as the univariate test of equality of distribution of
-global means. The test statistic (t) is the number of variables that reject the
-(per variable) null hypothesis of equality of distribution at a 95% confidence
-level. The (overall) null hypothesis is rejected if t > α, where α is some
-critical number of rejecting variables. The critical value, α, is obtained from
-an empirically derived approximate null distribution of t using resampling
-techniques.
+global means. This creates a set of p-values, which is corrected using the False
+Discovery Rate (FDR) correction, and the test statistic (t) is the number of variables
+that reject the (per variable) null hypothesis of equality of distribution at a 95%
+confidence level after correction. The (overall) null hypothesis is rejected if
+t >= 1 (i.e. if any field is rejected after correction).
+
+Three other statstical tests are provided for comparison purposes, the Mann-Whitney U
+(M-W) test, Student's t-test (T), and the Cramér-von Mises (C-VM) test. The FDR
+corrected K-S result is still used to compute overall pass / fail.
 """
 
 import argparse
@@ -238,7 +241,12 @@ def run(name, config):
     details, img_gal = main(args, tests)
 
     table_data = pd.DataFrame(details).T
-    uc_rejections = (table_data["K-S test p-val"] < args.alpha).sum()
+    uc_rejections = [
+        (table_data[f"{_test} test p-val"] < args.alpha).sum() for _test in tests
+    ]
+    cor_rejections = [
+        (table_data[f"{_test} test p-val cor"] < args.alpha).sum() for _test in tests
+    ]
     _hdrs = ["h0"]
     for _test in tests:
         _hdrs.extend(
@@ -256,11 +264,7 @@ def run(name, config):
     for _hdr in _hdrs[1:]:
         table_data[_hdr] = table_data[_hdr].apply(col_fmt)
 
-    tables = [
-        el.Table("Rejected", data=table_data[table_data["h0"] == "reject"], data_table=True),
-        el.Table("Accepted", data=table_data[table_data["h0"] == "accept"], data_table=True),
-        el.Table("Null", data=table_data[~table_data["h0"].isin(["accept", "reject"])], data_table=True),
-    ]
+    tables = [el.Table("Test details", data=table_data, data_table=True)]
 
     bib_html = bib2html(os.path.join(os.path.dirname(__file__), "ks.bib"))
 
@@ -268,26 +272,40 @@ def run(name, config):
         {"Figures": img_gal, "Details": tables, "References": [el.RawHTML(bib_html)]}
     )
     rejects = [var for var, dat in details.items() if dat["h0"] == "reject"]
+    assert len(rejects) == cor_rejections[0], (
+        "REJECTIONS FOR GLOBAL PASS/FAIL DON'T MATCH"
+    )
+
     if args.uncorrected:
         critical = args.critical
     else:
         critical = 1
 
+    test_status = ["pass" if len(rejects) < critical else "fail"]
+    stat_desc = [
+        "statistically identical"
+        if test_status[0] == "pass"
+        else "statistically different"
+    ]
+    for idx, _ in enumerate(tests[1:]):
+        if cor_rejections[idx + 1] < 1:
+            test_status.append("pass")
+            stat_desc.append("statistically identical")
+        else:
+            test_status.append("fail")
+            stat_desc.append("statistically different")
+
     results = el.Table(
         title="Results",
         data=OrderedDict(
             {
-                # 'Test status': ['pass' if len(rejects) < args.critical else 'fail'],
-                "Test status": ["pass" if len(rejects) < critical else "fail"],
-                "Variables analyzed": [len(details.keys())],
-                "Rejecting": [len(rejects)],
-                "Critical value": [int(critical)],
-                "Ensembles": [
-                    "statistically identical"
-                    if len(rejects) < critical
-                    else "statistically different"
-                ],
-                "Un-corrected rejections": [uc_rejections],
+                "Statistical test": tests,
+                "Test status": test_status,
+                "Variables analyzed": [len(details.keys())] * len(tests),
+                "Rejecting": cor_rejections,
+                "Critical value": [int(critical)] * len(tests),
+                "Ensembles": stat_desc,
+                "Un-corrected rejections": uc_rejections,
             }
         ),
     )
