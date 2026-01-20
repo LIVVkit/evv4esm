@@ -459,8 +459,12 @@ def compute_details(annual_avgs, common_vars, args, tests):
         for _test in tests:
             _stat, _pval = test_compare(annuals_1, annuals_2, _test)
             if np.isnan([_stat, _pval]).any() or np.isinf([_stat, _pval]).any():
-                _stat = None
-                _pval = None
+                if np.sum(annuals_1 - annuals_2) == 0:
+                    _stat = 0.0
+                    _pval = 1.0
+                else:
+                    _stat = None
+                    _pval = None
             details[var][f"{_test} test stat"] = _stat
             details[var][f"{_test} test p-val"] = _pval
 
@@ -503,7 +507,7 @@ def compute_details(annual_avgs, common_vars, args, tests):
                 var, f"{_test} test p-val cor"
             ]
 
-        if details[var]["T test stat"] is None:
+        if details[var]["K-S test stat"] == 0:
             details[var]["h0"] = "-"
         elif detail_df.loc[var, _testkey]:
             details[var]["h0"] = "reject"
