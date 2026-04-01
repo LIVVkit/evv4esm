@@ -73,7 +73,7 @@ dependencies = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
-dev = ["modelmimic", "ruff", "black", "isort", "pytest"]
+dev = ["modelmimic", "ruff", "isort", "pytest", "pre-commit"]
 
 [project.scripts]
 evv = "evv4esm.__main__:main"
