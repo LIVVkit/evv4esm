@@ -401,9 +401,9 @@ def test_compare(annuals_1, annuals_2, test_name):
 
     Parameters
     ----------
-        annuals_1 : array_like
+        annuals_1 : ``array_like``
             Annual global mean for ensemble 1 (ref) (n ensembles)
-        annuals_2 : array_like
+        annuals_2 : ``array_like``
             Annual global mean for ensemble 2 (test) (n ensembles)
         test_name : str
             Name of test (one of "T", "K-S", "M-W", or "C-VM" for Student's t-test,
@@ -412,7 +412,7 @@ def test_compare(annuals_1, annuals_2, test_name):
 
     Raises
     ------
-        NotImplementedError : If `test_name` is not implemented
+        NotImplementedError : If ``test_name`` is not implemented
 
     Returns
     -------

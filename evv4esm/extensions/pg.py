@@ -87,8 +87,11 @@ def _instance2sub(instance_number, total_perturbations):
     perturbation index (pi)  subscripts
 
     instances use 1-based indexes and vary according to this function:
-        ii = ci * len(PERTURBATIONS) + pi + 1
+
+    ``ii = ci * len(PERTURBATIONS) + pi + 1``
+
     where both pi and ci use 0-based indexes.
+
     """
     perturbation_index = (instance_number - 1) % total_perturbations
     initial_condition = (
@@ -103,7 +106,9 @@ def _sub2instance(initial_condition, perturbation_index, total_perturbations):
     to an instance number (ii)
 
     instances use 1-based indexes and vary according to this function:
-        ii = ci * len(PERTURBATIONS) + pi + 1
+
+    ``ii = ci * len(PERTURBATIONS) + pi + 1``
+
     where both pi and ci use 0-based indexes.
     """
     instance = initial_condition * total_perturbations + perturbation_index + 1
@@ -159,7 +164,7 @@ def variables_rmse(ifile_test, ifile_cntl, var_list, var_pefix=""):
          ifile_test: Path to a NetCDF dataset for a perturbed simulation
          ifile_cntl: Path to a NetCDF dataset for the control simulation
          var_list (list): List of all variables to analyze
-         var_pefix: Optional prefix (e.g., t_, qv_) to apply to the variable
+         var_pefix: Optional prefix (e.g., ``t_``, ``qv_``) to apply to the variable
 
     returns:
         rmse (pandas.DataFrame): A dataframe containing the RMSE and maximum
@@ -403,8 +408,7 @@ def run(name, config, print_details=False):
     Args:
         name: The name of the extension
         config: The test's config dictionary
-        print_details: Whether to print the analysis details to stdout
-                       (default: False)
+        print_details: Whether to print the analysis details to stdout (default: False)
 
     Returns:
        A LIVVkit page element containing the LIVVkit elements to display on a webpage
