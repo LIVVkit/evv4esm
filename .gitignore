@@ -68,3 +68,6 @@ docs/_build/
 
 # PyBuilder
 target/
+# pixi environments
+.pixi/*
+!.pixi/config.toml
