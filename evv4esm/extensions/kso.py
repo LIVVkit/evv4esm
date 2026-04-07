@@ -289,20 +289,25 @@ def case_files(args):
         key1 += "1"
         key2 += "2"
 
+    if args.component in ["mpassi"]:
+        date_style = "yronly"
+    else:
+        date_style = "med"
+
     f_sets = {
         key1: e3sm.component_monthly_files(
             args.test_dir,
             args.component,
             args.ninst,
             hist_name=args.hist_name,
-            date_style="med",
+            date_style=date_style,
         ),
         key2: e3sm.component_monthly_files(
             args.ref_dir,
             args.component,
             args.ninst,
             hist_name=args.hist_name,
-            date_style="med",
+            date_style=date_style,
         ),
     }
 

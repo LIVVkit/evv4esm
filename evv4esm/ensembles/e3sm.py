@@ -55,6 +55,8 @@ def file_date_str(case_file, style="short", hist_name="h0"):
         search_regex = r"{}\.[0-9]+-[0-9]+-[0-9]+.nc".format(hist_name)
     elif style == "short":
         search_regex = r"{}\.[0-9]+-[0-9]+.nc".format(hist_name)
+    elif style == "yronly":
+        search_regex = r"{}\.[0-9]+.nc".format(hist_name)
     else:
         search_regex = r"{}\.[0-9]+-[0-9]+.nc".format(hist_name)
     result = re.search(search_regex, case_file).group(0)
@@ -68,6 +70,8 @@ def component_monthly_files(
         date_search = "????-??-??-??"
     elif date_style == "med":
         date_search = "????-??-??"
+    elif date_style == "yronly":
+        date_search = "????"
     else:
         date_search = "????-??"
 
