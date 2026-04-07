@@ -239,19 +239,7 @@ def run(name, config):
         else:
             table_data[_hdr] = table_data[_hdr].apply(col_fmt_ff)
 
-    tables = [
-        el.Table(
-            "Rejected", data=table_data[table_data["h0"] == "reject"], data_table=True
-        ),
-        el.Table(
-            "Accepted", data=table_data[table_data["h0"] == "accept"], data_table=True
-        ),
-        el.Table(
-            "Null",
-            data=table_data[~table_data["h0"].isin(["accept", "reject"])],
-            data_table=True,
-        ),
-    ]
+    tables = [el.Table("Test details", data=table_data, data_table=True)]
 
     bib_html = bib2html(os.path.join(os.path.dirname(__file__), "ks.bib"))
 
