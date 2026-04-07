@@ -1,17 +1,21 @@
 /******************************************************************************
   Basic Styling Overrides
 ******************************************************************************/
+:root{
+    --dtfc-thead-cell_background:  #512E5F;
+    --dtfc-tbody-cell_background:  #512E5F;
+}
 html {
-	font-family: 'Lato', helvetica, sans-serif;
-	height: 100%;
+    font-family: 'Lato', helvetica, sans-serif;
+    height: 100%;
 }
 
 body {
-	height: 100%;
-	margin-top: 0px;
-	margin-right: 0px;
-	margin-bottom: 0px;
-	margin-left: 0px;
+    height: 100%;
+    margin-top: 0px;
+    margin-right: 0px;
+    margin-bottom: 0px;
+    margin-left: 0px;
     min-width: 1125px;
     background: url("../imgs/background.jpg") no-repeat center center fixed;
     -webkit-background-size: cover;
@@ -20,8 +24,11 @@ body {
     background-size: cover;
 }
 
-h1, h2, h3, h4 {
-	font-family: 'Lato', helvetica, sans-serif;
+h1,
+h2,
+h3,
+h4 {
+    font-family: 'Lato', helvetica, sans-serif;
 }
 
 hr {
@@ -38,22 +45,21 @@ a {
 ******************************************************************************/
 #header {
     min-width: 800px;
-	background-color: #222222;
+    background-color: #222222;
     border-bottom: 1px solid #222222;
     font-size: 1.5em;
     font-weight: 500;
 }
 
 #header:after {
-  content: "";
-  display: table;
-  clear: both;
+    content: "";
+    display: table;
+    clear: both;
 }
 
-#header-spacer {
-}
+#header-spacer {}
 
-#header a{
+#header a {
     text-decoration: none;
 }
 
@@ -65,31 +71,31 @@ a {
 }
 
 #header-home {
-	float: left;
+    float: left;
     color: #F26C3A;
     height: 1.25em;
-   	line-height: 1.25em;
-   	margin-top: 15px;
+    line-height: 1.25em;
+    margin-top: 15px;
     text-align: left;
     width: 15%;
 }
 
 #header-title {
-	float: left;
+    float: left;
     color: #F26C3A;
-	height: 1.25em;
-	line-height: 1.25em;
-	margin-top: 15px;
+    height: 1.25em;
+    line-height: 1.25em;
+    margin-top: 15px;
     text-align: center;
     width: 50%;
 }
 
 #header-docs {
-	float: left;
+    float: left;
     color: #F26C3A;
-	height: 1.25em;
-	line-height: 1.25em;
-	margin-top: 15px;
+    height: 1.25em;
+    line-height: 1.25em;
+    margin-top: 15px;
     padding-right: 15px;
     text-align: right;
     width: 25%;
@@ -108,13 +114,10 @@ a {
     padding: 20px;
 }
 
-#content {
+#content{
     padding: 10px;
     width: 71%;
     float: left;
-}
-
-#content div {
     background-color: white;
 }
 
@@ -127,11 +130,11 @@ table {
     border-spacing: 0;
 }
 
-th {
-   background-color: #512E5F;
-   color: #ffffff;
-   padding: 10px;
-   border-bottom: 2px solid #F26C3A;
+thead, th {
+    background-color: #512E5F;
+    color: #ffffff;
+    padding: 10px;
+    border-bottom: 2px solid #F26C3A;
 }
 
 td {
@@ -146,6 +149,11 @@ td {
 
 .testCase {
     text-align: right;
+}
+
+div.dt-container {
+    width: 100%;
+    margin: auto auto;
 }
 
 /******************************************************************************
@@ -179,7 +187,7 @@ td {
 .diff p {
     line-height: 1.05em;
     margin: 0px;
-    padding-left:10%;
+    padding-left: 10%;
     font-family: monospace;
 }
 

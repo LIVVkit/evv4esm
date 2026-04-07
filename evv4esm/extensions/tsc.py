@@ -99,8 +99,7 @@ def run(name, config, print_details=False):
     Args:
         name: The name of the extension
         config: The test's config dictionary
-        print_details: Whether to print the analysis details to stdout
-                       (default: False)
+        print_details: Whether to print the analysis details to stdout (default: False)
 
     Returns:
        A LIVVkit page element containing the LIVVkit elements to display on a webpage
@@ -131,7 +130,11 @@ def run(name, config, print_details=False):
                     tbl_data[_hdr].append(val)
 
             detail_tables[level].append(
-                el.Table(title=f"{level.capitalize()}, {_time}", data=tbl_data)
+                el.Table(
+                    title=f"{level.capitalize()}, {_time}",
+                    data=tbl_data,
+                    data_table=True,
+                )
             )
 
     tabs = el.Tabs(

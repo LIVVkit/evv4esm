@@ -37,7 +37,7 @@ authors = [
     { name = "Joseph H. Kennedy", email = "kennedyjh@ornl.gov" },
 ]
 name = "evv4esm"
-requires-python = ">=3.6"
+requires-python = ">=3.9"
 description = "Extended verification and validation for earth system models"
 readme = { file = "README.md", content-type = "text/markdown" }
 license = { text = "BSD-3-Clause" }
@@ -50,13 +50,12 @@ classifiers = [
     "Natural Language :: English",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
     "setuptools",
@@ -64,7 +63,7 @@ dependencies = [
     "numpy",
     "scipy",
     "pandas>=2.1.0",
-    "livvkit>=3.0.1",
+    "livvkit>=3.3.0",
     "netCDF4",
     "matplotlib",
     "pybtex>=0.24.0",
@@ -73,7 +72,7 @@ dependencies = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
-dev = ["modelmimic", "ruff", "black", "isort", "pytest"]
+dev = ["modelmimic", "ruff", "isort", "pytest", "pre-commit"]
 
 [project.scripts]
 evv = "evv4esm.__main__:main"
@@ -93,3 +92,16 @@ intersphinx = "https://docs.python.org/3/objects.inv"
 theme = "readthedocs"
 privacy = ["PRIVATE:**.__*__", "PUBLIC:**.__init__"]
 add-package = ["./evv4esm"]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[tool.pixi.pypi-dependencies]
+evv4esm = { path = ".", editable = true }
+
+[tool.pixi.environments]
+default = { solve-group = "default" }
+dev = { features = ["dev"], solve-group = "default" }
+
+[tool.pixi.tasks]
