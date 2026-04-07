@@ -5,5 +5,11 @@
         "ssh{}",
         "velocityMeridional{}",
         "velocityZonal{}"
+    ],
+    "seaice": [
+        "uVelocityGeo{}",
+        "vVelocityGeo{}",
+        "iceAreaCell{}",
+        "iceVolumeCell{}"
     ]
 }
