@@ -51,11 +51,15 @@ from pathlib import Path
 from pprint import pprint
 
 import livvkit
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from cartopy import crs as ccrs
+from cartopy import feature as cfeature
 from livvkit import elements as el
 from livvkit.util import functions as fn
 from livvkit.util.LIVVDict import LIVVDict
+from netCDF4 import Dataset
 from scipy import stats
 from statsmodels.stats import multitest as smm
 
@@ -366,6 +370,109 @@ def populate_metadata():
     return metadata
 
 
+def plot_pvals_2d(
+    args,
+    p_vals_uc,
+    p_vals,
+    grid_file,
+    field_name,
+    img_file,
+):
+    with Dataset(grid_file, "r") as _gf:
+        lon = _gf.variables["lonCell"][:] * 180 / np.pi
+        lat = _gf.variables["latCell"][:] * 180 / np.pi
+
+    if p_vals.ndim == 1:
+        pval_plt = p_vals
+        pval_uc_plt = p_vals_uc
+    else:
+        pval_plt = p_vals.min(axis=1)
+        pval_uc_plt = p_vals_uc.min(axis=1)
+
+    _rej_uc = pval_uc_plt < args.alpha
+    _rej = pval_plt < args.alpha
+
+    proj = ccrs.Robinson(
+        central_longitude=0,
+    )
+    tform = ccrs.PlateCarree()
+    # fig, axes = plt.subplots(2, 1, figsize=(10, 10), dpi=120)
+    fig = plt.figure(figsize=(10, 10), dpi=120)
+    axes = [fig.add_subplot(2, 1, i + 1, projection=proj) for i in range(2)]
+
+    marker_size = 5
+    cbars = []
+
+    # Plot the un-corrected pvals and highlight those rejections on top panel
+    try:
+        _cfill = axes[0].scatter(
+            lon,
+            lat,
+            c=pval_uc_plt,
+            s=marker_size,
+            cmap="Blues",
+            marker="H",
+            vmin=0,
+            vmax=1,
+            transform=tform,
+        )
+    except ValueError:
+        return
+
+    cbars.append(plt.colorbar(_cfill, ax=axes[0]))
+
+    axes[0].scatter(
+        lon[_rej_uc],
+        lat[_rej_uc],
+        c=pval_uc_plt[_rej_uc],
+        edgecolors="red",
+        lw=0.5,
+        s=marker_size,
+        marker="H",
+        cmap="Blues",
+        vmin=0,
+        vmax=1,
+        transform=tform,
+    )
+    # Plot the corrected pvals and highlight those rejections on bottom panel
+    _cfill = axes[1].scatter(
+        lon,
+        lat,
+        c=pval_plt,
+        s=marker_size,
+        cmap="Blues",
+        marker="H",
+        vmin=0,
+        vmax=1,
+        transform=tform,
+    )
+    cbars.append(plt.colorbar(_cfill, ax=axes[1]))
+
+    axes[1].scatter(
+        lon[_rej],
+        lat[_rej],
+        c=pval_plt[_rej],
+        edgecolors="red",
+        lw=0.5,
+        s=marker_size,
+        marker="H",
+        cmap="Blues",
+        vmin=0,
+        vmax=1,
+        transform=tform,
+    )
+    axes[0].set_title(f"Un-corrected p-values {field_name}")
+    axes[1].set_title(f"FDR corrected p-values {field_name}")
+    gridline_args = {"linestyle": "--", "linewidth": 0.1}
+    for axis in axes:
+        axis.add_feature(cfeature.LAND, color="gainsboro")
+        axis.coastlines(linewidth=0.1)
+        axis.gridlines(**gridline_args)
+
+    plt.tight_layout()
+    plt.savefig(img_file)
+
+
 def main(args):
     ens_files, key1, key2 = case_files(args)
     if args.test_case == args.ref_case:
@@ -400,13 +507,13 @@ def main(args):
         if isinstance(annuals_1, np.ma.MaskedArray) and isinstance(
             annuals_2, np.ma.MaskedArray
         ):
-            _, p_val = ks_test(annuals_1.filled(), annuals_2.filled())
+            _, p_val_uc = ks_test(annuals_1.filled(), annuals_2.filled())
         else:
-            _, p_val = ks_test(annuals_1, annuals_2)
+            _, p_val_uc = ks_test(annuals_1, annuals_2)
+        null_reject_pre_correct = np.sum(np.where(p_val_uc <= args.alpha, 1, 0))
 
-        null_reject_pre_correct = np.sum(np.where(p_val <= args.alpha, 1, 0))
         _, p_val = smm.fdrcorrection(
-            p_val.flatten(), alpha=args.alpha, method="n", is_sorted=False
+            p_val_uc.flatten(), alpha=args.alpha, method="n", is_sorted=False
         )
         null_reject_post_correct = np.sum(np.where(p_val <= args.alpha, 1, 0))
 
@@ -445,12 +552,53 @@ def main(args):
 
         details[var]["h0"] = test_result
 
-        img_file = os.path.relpath(
-            os.path.join(args.img_dir, f"{var}.{args.img_fmt}"), os.getcwd()
+        # Make 2-D plots
+        img_file2d = os.path.relpath(
+            os.path.join(args.img_dir, f"{var}_pval2d.{args.img_fmt}"), os.getcwd()
+        )
+        if p_val_uc.ndim == 2:
+            _desc0 = "Depth minimum p"
+        else:
+            _desc0 = "P"
+
+        img_desc2d = (
+            f"{_desc0}-values of compared ensembles <em>{args.test_case}</em> vs. "
+            f"<em>{args.ref_case}</em> of {var} ({var_1['desc']}). Rejected p-values "
+            f"< {args.alpha:.02f} are plotted in red. Un-corrected rejected "
+            f"grid-points: {null_reject_pre_correct}, rejected p-values corrected: "
+            f"{null_reject_post_correct} of {np.prod(p_val.shape)} total grid points"
+        )
+
+        img_link2d = Path(*Path(args.img_dir).parts[-2:], Path(img_file2d).name)
+
+        # Trim timeClimatology_avg so image captions in gallery are not super long
+        if "timeClimatology_avg" in var:
+            img_title2d = "_".join(var.split("_")[2:])
+        else:
+            img_title2d = var
+
+        _img2d = el.Image(
+            img_title2d,
+            img_desc2d,
+            img_link2d,
+            relative_to="",
+            group=details[var]["h0"],
+        )
+
+        plot_pvals_2d(
+            args,
+            p_val_uc,
+            p_val.reshape(p_val_uc.shape),
+            grid_file=ens_files[key1][0],
+            field_name=img_title2d,
+            img_file=img_file2d,
         )
 
         # Plot ensemble histogram / q-q, p-p plot of
         # global means (mean over all but ensemble axis)
+        img_file = os.path.relpath(
+            os.path.join(args.img_dir, f"{var}.{args.img_fmt}"), os.getcwd()
+        )
         prob_plot(
             annuals_1.mean(axis=tuple(range(annuals_1.ndim - 1))),
             annuals_2.mean(axis=tuple(range(annuals_2.ndim - 1))),
@@ -484,6 +632,7 @@ def main(args):
             img_title, img_desc, img_link, relative_to="", group=details[var]["h0"]
         )
         images[details[var]["h0"]].append(_img)
+        images[details[var]["h0"]].append(_img2d)
 
     gals = []
     for group in ["reject", "accept", "-"]:

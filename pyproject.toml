@@ -68,6 +68,7 @@ dependencies = [
     "matplotlib",
     "pybtex>=0.24.0",
     "statsmodels>=0.14.0",
+    "cartopy",
 ]
 dynamic = ["version"]
 
