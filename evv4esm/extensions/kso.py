@@ -121,6 +121,13 @@ def parse_args(args=None):
     )
 
     parser.add_argument(
+        "--var-pfx",
+        default="timeClimatology_avg",
+        type=str,
+        help="Prefix for variable names",
+    )
+
+    parser.add_argument(
         "--ninst",
         default=30,
         type=int,
@@ -281,7 +288,7 @@ def case_files(args):
         key1 += "1"
         key2 += "2"
 
-    if args.component in ["mpassi"]:
+    if args.component in ["mpassi", "mpaso"]:
         date_style = "yronly"
     else:
         date_style = "med"
@@ -482,7 +489,8 @@ def main(args):
     # Right now climatology has five computed climatologies (JFM, AMJ, JAS, OND, ANN)
     # We need to format the variable list so it's has the key we want (_5), and is also
     # formatted to have the correct averaging prefix (timeClimatology_avg)
-    var_prefix = "timeClimatology_avg"
+
+    var_prefix = args.var_pfx
     var_suffix = ""
     test_vars = [
         f"{var_prefix}_{test_var.format(var_suffix)}" for test_var in args.var_set
